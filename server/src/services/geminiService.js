@@ -93,8 +93,9 @@ Number of chapters: ${targetChapterCount}
 
 Rules:
 - Return ONLY valid JSON, no markdown fences, no commentary.
-- Chapter titles must be specific and non-generic (no "Introduction", "Conclusion" — make them reflect actual content).
-- Ensure logical progression between chapters (no repetition, coherent narrative/argument arc).`;
+- Chapter titles must be specific, catchy, and natural. Avoid overly formal or flowery language.
+- Ensure the tone matches the audience and genre perfectly. If it's a simple story, keep the language accessible and engaging, not overly complex.
+- Ensure logical progression between chapters (no repetition, coherent narrative arc).`;
 
   return await executeWithRetry(prompt, outlineSchema);
 };
@@ -143,7 +144,13 @@ Context from previous chapter ending: ${prevChapterExcerpt || 'None'}
 Context for next chapter title: ${nextChapterTitle || 'None'}
 Target length: ~${targetWords} words
 
-Write the full chapter content in Markdown. Use headers (##) for sub-sections where natural, keep paragraphs readable (3-5 sentences), and end with a natural transition line into the next chapter. Do not repeat the chapter title as the first line — the app displays it separately.`;
+Write the full chapter content in Markdown. Use headers (##) for sub-sections where natural, keep paragraphs readable (3-5 sentences), and end with a natural transition line into the next chapter. 
+
+Important Style Rules:
+- Keep the writing natural, engaging, and accessible.
+- Avoid overly complex, flowery, or "advanced" vocabulary unless the tone explicitly demands it.
+- Show, don't tell. Focus on genuine emotion and clear actions rather than over-explaining.
+- Do not repeat the chapter title as the first line.`;
   } else if (mode === 'expand_text') {
     prompt = `You are editing a chapter for the ebook "${bookTitle}" (Tone: ${tone}).
 Chapter: ${chapterTitle}
