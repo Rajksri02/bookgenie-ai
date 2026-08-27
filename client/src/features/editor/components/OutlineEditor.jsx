@@ -1,11 +1,13 @@
 import React, { useState } from 'react';
 import { DragDropContext, Droppable } from '@hello-pangea/dnd';
 import OutlineCard from './OutlineCard';
+import ChapterGenerator from './ChapterGenerator';
 
 const OutlineEditor = ({ initialOutline, onStartOver, bookContext }) => {
   const [chapters, setChapters] = useState(initialOutline.chapters || []);
   const [bookTitle, setBookTitle] = useState(initialOutline.title || '');
   const [bookSubtitle, setBookSubtitle] = useState(initialOutline.subtitle || '');
+  const [writingChapterIndex, setWritingChapterIndex] = useState(null);
 
   const handleDragEnd = (result) => {
     if (!result.destination) return; // Dropped outside the list
@@ -36,6 +38,31 @@ const OutlineEditor = ({ initialOutline, onStartOver, bookContext }) => {
     console.log("Committing to database:", { bookContext, bookTitle, bookSubtitle, chapters });
     alert("This will be wired up to the database in the next phase! Check console for data payload.");
   };
+
+  if (writingChapterIndex !== null) {
+    const chapter = chapters[writingChapterIndex];
+    const prevChapter = writingChapterIndex > 0 ? chapters[writingChapterIndex - 1] : null;
+    const nextChapter = writingChapterIndex < chapters.length - 1 ? chapters[writingChapterIndex + 1] : null;
+    
+    return (
+      <div className="max-w-5xl mx-auto py-8 px-4 h-screen flex flex-col">
+        <button 
+          onClick={() => setWritingChapterIndex(null)}
+          className="mb-4 text-blue-600 hover:underline self-start flex items-center gap-1 font-medium"
+        >
+          &larr; Back to Outline
+        </button>
+        <div className="flex-1">
+          <ChapterGenerator 
+            chapter={chapter}
+            bookContext={{ ...bookContext, title: bookTitle }}
+            previousChapter={prevChapter}
+            nextChapter={nextChapter}
+          />
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="max-w-4xl mx-auto py-8 px-4">
@@ -87,6 +114,7 @@ const OutlineEditor = ({ initialOutline, onStartOver, bookContext }) => {
                   chapter={chapter}
                   onUpdate={handleUpdateChapter}
                   onDelete={handleDeleteChapter}
+                  onWrite={() => setWritingChapterIndex(index)}
                   bookContext={bookContext}
                 />
               ))}

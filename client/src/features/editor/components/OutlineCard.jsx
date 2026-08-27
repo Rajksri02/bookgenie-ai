@@ -3,7 +3,7 @@ import { Draggable } from '@hello-pangea/dnd';
 import { GripVertical, Trash2, RefreshCw, Edit2, Check } from 'lucide-react';
 import { aiApi } from '../api/aiApi';
 
-const OutlineCard = ({ chapter, index, onUpdate, onDelete, bookContext }) => {
+const OutlineCard = ({ chapter, index, onUpdate, onDelete, onWrite, bookContext }) => {
   const [isEditing, setIsEditing] = useState(false);
   const [isRegenerating, setIsRegenerating] = useState(false);
   const [editData, setEditData] = useState({ ...chapter });
@@ -131,7 +131,13 @@ const OutlineCard = ({ chapter, index, onUpdate, onDelete, bookContext }) => {
                         className={`flex items-center gap-1 text-xs px-2 py-1 rounded text-blue-600 hover:bg-blue-50 transition-colors border border-transparent hover:border-blue-200 ${isRegenerating ? 'opacity-50 cursor-not-allowed' : ''}`}
                       >
                         <RefreshCw size={14} className={isRegenerating ? 'animate-spin' : ''} />
-                        {isRegenerating ? 'Regenerating...' : 'Regenerate AI'}
+                        {isRegenerating ? 'Regenerating...' : 'Regenerate'}
+                      </button>
+                      <button
+                        onClick={onWrite}
+                        className="flex items-center gap-1 text-xs px-3 py-1 rounded bg-blue-600 text-white hover:bg-blue-700 transition-colors shadow-sm ml-2"
+                      >
+                        Write Chapter
                       </button>
                     </div>
                   </div>

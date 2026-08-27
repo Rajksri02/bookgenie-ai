@@ -1,5 +1,5 @@
 const express = require('express');
-const { generateOutline, regenerateChapter } = require('../controllers/ai.controller');
+const { generateOutline, regenerateChapter, generateChapterContent } = require('../controllers/ai.controller');
 const requireAuth = require('../middlewares/requireAuth');
 const { aiRateLimiter } = require('../middlewares/rateLimiter');
 const validateRequest = require('../middlewares/validateRequest');
@@ -27,10 +27,25 @@ const regenerateSchema = z.object({
   })
 });
 
+const generateChapterSchema = z.object({
+  body: z.object({
+    mode: z.enum(['full_draft', 'expand_text', 'rewrite_tone']).optional(),
+    bookTitle: z.string().min(1),
+    chapterTitle: z.string().min(1),
+    chapterSummary: z.string().min(1),
+    prevChapterExcerpt: z.string().optional(),
+    nextChapterTitle: z.string().optional(),
+    targetWords: z.number().min(100).max(5000).optional(),
+    tone: z.string().min(1),
+    selectedText: z.string().optional()
+  })
+});
+
 // Temporarily bypassing requireAuth for Phase 5 Testing
 router.use(aiRateLimiter);
 
 router.post('/outline', validateRequest(outlineSchema), generateOutline);
 router.post('/outline/regenerate-chapter', validateRequest(regenerateSchema), regenerateChapter);
+router.post('/chapter/:chapterId/generate', validateRequest(generateChapterSchema), generateChapterContent);
 
 module.exports = router;

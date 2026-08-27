@@ -55,17 +55,16 @@ const executeWithRetry = async (prompt, schema, retryCount = 1) => {
   
   while (attempt <= retryCount) {
     try {
-      const interaction = await client.interactions.create({
-        model: "gemini-3.7-flash",
-        input: prompt,
-        response_format: {
-          type: 'text',
-          mime_type: 'application/json',
-          schema: schema
-        },
+      const response = await client.models.generateContent({
+        model: "gemini-3.6-flash",
+        contents: prompt,
+        config: {
+          responseMimeType: 'application/json',
+          responseSchema: schema
+        }
       });
 
-      const rawOutput = interaction.output_text;
+      const rawOutput = response.text;
       const strippedOutput = stripMarkdownFences(rawOutput);
       
       // Attempt to parse to verify it's valid JSON matching the schema conceptually
@@ -116,7 +115,73 @@ Rules:
   return await executeWithRetry(prompt, chapterSchema);
 };
 
+/**
+ * Generates chapter content (streaming).
+ * Supports modes: 'full_draft', 'expand_text', 'rewrite_tone'
+ */
+const generateChapterStream = async ({
+  mode = 'full_draft',
+  bookTitle,
+  chapterTitle,
+  chapterSummary,
+  prevChapterExcerpt = '',
+  nextChapterTitle = '',
+  targetWords = 1000,
+  tone,
+  selectedText = '' // used for expand_text and rewrite_tone
+}) => {
+  const client = getAiClient();
+  let prompt = '';
+
+  if (mode === 'full_draft') {
+    prompt = `You are ghostwriting a chapter for a non-fiction/fiction ebook (writing in ${tone} tone).
+
+Book title: ${bookTitle}
+Chapter title: ${chapterTitle}
+Chapter summary/goal: ${chapterSummary}
+Context from previous chapter ending: ${prevChapterExcerpt || 'None'}
+Context for next chapter title: ${nextChapterTitle || 'None'}
+Target length: ~${targetWords} words
+
+Write the full chapter content in Markdown. Use headers (##) for sub-sections where natural, keep paragraphs readable (3-5 sentences), and end with a natural transition line into the next chapter. Do not repeat the chapter title as the first line — the app displays it separately.`;
+  } else if (mode === 'expand_text') {
+    prompt = `You are editing a chapter for the ebook "${bookTitle}" (Tone: ${tone}).
+Chapter: ${chapterTitle}
+Summary: ${chapterSummary}
+
+The user wants to expand the following specific text to be more detailed and comprehensive, aiming to add about ${targetWords} words to it.
+Ensure the expanded text flows naturally.
+
+TEXT TO EXPAND:
+"""
+${selectedText}
+"""
+
+Return ONLY the expanded text in Markdown, without repeating the original text unless necessary for flow.`;
+  } else if (mode === 'rewrite_tone') {
+    prompt = `You are editing a chapter for the ebook "${bookTitle}".
+The user wants to rewrite the following text in a strictly **${tone}** tone. 
+
+TEXT TO REWRITE:
+"""
+${selectedText}
+"""
+
+Return ONLY the rewritten text in Markdown. Keep the length roughly similar.`;
+  } else {
+    throw new Error('Invalid generation mode');
+  }
+
+  const responseStream = await client.models.generateContentStream({
+    model: 'gemini-3.6-flash',
+    contents: prompt
+  });
+
+  return responseStream;
+};
+
 module.exports = {
   generateOutline,
   regenerateSingleChapter,
+  generateChapterStream
 };
