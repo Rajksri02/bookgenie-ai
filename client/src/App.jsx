@@ -36,14 +36,19 @@ const LoginPage = () => {
   );
 };
 
+import OutlineGenerator from './features/editor/components/OutlineGenerator';
+
 const DashboardPage = () => {
   const { user, logout } = useAuth();
   
   return (
     <div className="min-h-screen p-8 bg-gray-50">
-      <div className="max-w-4xl mx-auto bg-white p-6 rounded-lg shadow-sm">
-        <div className="flex justify-between items-center mb-6">
-          <h2 className="text-2xl font-bold text-gray-900">Dashboard</h2>
+      <div className="max-w-6xl mx-auto">
+        <div className="flex justify-between items-center mb-8">
+          <div>
+            <h2 className="text-3xl font-bold text-gray-900">Dashboard</h2>
+            <p className="text-gray-600 mt-1">Welcome back, {user?.name || 'User'}!</p>
+          </div>
           <button 
             onClick={logout}
             className="text-red-600 hover:text-red-700 font-medium"
@@ -51,8 +56,11 @@ const DashboardPage = () => {
             Logout
           </button>
         </div>
-        <p className="text-gray-700">Welcome back, {user?.name || 'User'}!</p>
-        <p className="text-gray-500 mt-2">This is a protected route.</p>
+        
+        {/* Mount OutlineGenerator for Phase 5 Testing */}
+        <div className="mt-8">
+          <OutlineGenerator />
+        </div>
       </div>
     </div>
   );
@@ -67,9 +75,12 @@ function App() {
           <Route path="/login" element={<LoginPage />} />
           {/* <Route path="/register" element={<RegisterPage />} /> */}
           
+          {/* Temporarily unprotected for Phase 5 Testing */}
+          <Route path="/dashboard" element={<DashboardPage />} />
+
           {/* Protected Routes */}
           <Route element={<ProtectedRoute />}>
-            <Route path="/dashboard" element={<DashboardPage />} />
+            {/* Real dashboard will go back here later */}
           </Route>
         </Routes>
       </Router>

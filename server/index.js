@@ -5,6 +5,7 @@ const cookieParser = require('cookie-parser');
 const connectDB = require('./src/config/db');
 const errorHandler = require('./src/middlewares/errorHandler');
 const authRoutes = require('./src/routes/auth.routes');
+const aiRoutes = require('./src/routes/ai.routes');
 
 // Load env vars
 dotenv.config();
@@ -31,6 +32,7 @@ app.use(
 
 // Mount routers
 app.use('/api/auth', authRoutes);
+app.use('/api/ai', aiRoutes);
 
 // Base route for health check
 app.get('/', (req, res) => {
