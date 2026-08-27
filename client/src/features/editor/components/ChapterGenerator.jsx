@@ -12,6 +12,11 @@ const ChapterGenerator = ({ chapter, bookContext, previousChapter, nextChapter }
   
   const textareaRef = useRef(null);
 
+  const handleSaveDraft = () => {
+  localStorage.setItem('bookgenie_chapter_draft', content);
+  alert('Chapter draft saved!');
+};
+
   const handleGenerate = () => {
     if (isGenerating) return;
 
@@ -143,16 +148,29 @@ const ChapterGenerator = ({ chapter, bookContext, previousChapter, nextChapter }
 </div>
       </div>
 
-      <div className="flex justify-end">
+         <div className="flex justify-end gap-3">
+        <button
+          type="button"
+          onClick={handleSaveDraft}
+          className="px-4 py-2.5 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors"
+        >
+          Save Draft
+        </button>
+
         <button
           onClick={handleGenerate}
-          disabled={isGenerating || generationsRemaining === 0 || (mode !== 'full_draft' && !selectedText)}
+          disabled={
+            isGenerating ||
+            generationsRemaining === 0 ||
+            (mode !== 'full_draft' && !selectedText)
+          }
           className={`flex items-center gap-2 px-6 py-2.5 rounded-lg font-medium text-white transition-all
-            ${isGenerating 
-              ? 'bg-blue-400 cursor-not-allowed' 
-              : generationsRemaining === 0 
-                ? 'bg-gray-400 cursor-not-allowed'
-                : 'bg-blue-600 hover:bg-blue-700 shadow-sm hover:shadow-md'
+            ${
+              isGenerating
+                ? 'bg-blue-400 cursor-not-allowed'
+                : generationsRemaining === 0
+                  ? 'bg-gray-400 cursor-not-allowed'
+                  : 'bg-blue-600 hover:bg-blue-700 shadow-sm hover:shadow-md'
             }`}
         >
           {isGenerating ? (
@@ -160,7 +178,12 @@ const ChapterGenerator = ({ chapter, bookContext, previousChapter, nextChapter }
           ) : (
             <Play size={18} />
           )}
-          {isGenerating ? 'Generating...' : mode === 'full_draft' ? 'Generate Chapter' : 'Apply AI Edit'}
+
+          {isGenerating
+            ? 'Generating...'
+            : mode === 'full_draft'
+              ? 'Generate Chapter'
+              : 'Apply AI Edit'}
         </button>
       </div>
     </div>
