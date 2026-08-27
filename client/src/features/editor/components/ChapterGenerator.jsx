@@ -137,6 +137,9 @@ const ChapterGenerator = ({ chapter, bookContext, previousChapter, nextChapter }
           placeholder="Your chapter content will appear here..."
           className="flex-1 w-full p-4 border border-gray-200 rounded-lg resize-none focus:ring-2 focus:ring-blue-500 focus:border-transparent font-sans leading-relaxed text-gray-800 h-96"
         />
+         <p className="text-xs text-gray-500 text-right mt-1">
+  {content.length} characters
+</p>
       </div>
 
       <div className="flex justify-end">
