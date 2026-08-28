@@ -10,7 +10,7 @@ const loadingStates = [
   "Finalizing outline... almost there!"
 ];
 
-const OutlineGenerator = () => {
+const OutlineGenerator = ({ onGenerate }) => {
   const [formData, setFormData] = useState({
     topic: '',
     genre: 'Science Fiction',
@@ -47,6 +47,15 @@ const OutlineGenerator = () => {
     
     try {
       const response = await aiApi.generateOutline(formData);
+      
+      const newBookData = {
+        ...response.data.book,
+        chapters: response.data.chapters
+      };
+      
+      if (onGenerate) {
+        onGenerate(newBookData);
+      }
       setOutline(response.data);
     } catch (err) {
       console.error(err);

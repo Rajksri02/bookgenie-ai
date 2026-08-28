@@ -1,5 +1,7 @@
 const catchAsync = require('../utils/catchAsync');
 const geminiService = require('../services/geminiService');
+const Book = require('../models/Book.model');
+const Chapter = require('../models/Chapter.model');
 
 /**
  * @route   POST /api/ai/outline
@@ -17,9 +19,37 @@ const generateOutline = catchAsync(async (req, res) => {
     audience
   });
 
+  // Create Book Document
+  const bookTitle = outline.title || `Book about ${topic.substring(0, 30)}`;
+  const bookSubtitle = outline.subtitle || '';
+  const newBook = await Book.create({
+    user: req.user._id,
+    title: bookTitle,
+    subtitle: bookSubtitle,
+    topic,
+    genre,
+    tone,
+    targetAudience: audience
+  });
+
+  // Create Chapter Documents
+  const chaptersToInsert = outline.chapters.map((ch, index) => ({
+    book: newBook._id,
+    title: ch.title,
+    summary: ch.summary,
+    estimatedWords: ch.estimatedWords,
+    order: index, // Explicit drag-and-drop order
+    status: 'draft' // Default status
+  }));
+
+  const savedChapters = await Chapter.insertMany(chaptersToInsert);
+
   res.status(200).json({
     success: true,
-    data: outline,
+    data: {
+      book: newBook,
+      chapters: savedChapters
+    },
   });
 });
 
@@ -81,13 +111,24 @@ const generateChapterContent = catchAsync(async (req, res) => {
       selectedText
     });
 
+    let fullContent = '';
+    
     for await (const chunk of stream) {
       if (chunk.text) {
+        fullContent += chunk.text;
         // SSE format: data: JSON_STRING\n\n
         res.write(`data: ${JSON.stringify({ text: chunk.text })}\n\n`);
       }
     }
     
+    // Save final content to DB and update status to completed
+    if (req.params.chapterId && req.params.chapterId !== 'temp') {
+      await Chapter.findByIdAndUpdate(req.params.chapterId, {
+        content: fullContent,
+        status: 'completed'
+      });
+    }
+
     // Signal completion
     res.write(`data: [DONE]\n\n`);
   } catch (error) {

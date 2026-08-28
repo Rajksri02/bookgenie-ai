@@ -12,7 +12,7 @@ const outlineSchema = z.object({
     topic: z.string().min(3, "Topic is too short"),
     genre: z.string().min(2, "Genre is required"),
     tone: z.string().min(2, "Tone is required"),
-    targetChapterCount: z.number().min(1).max(20).optional().default(5),
+    targetChapterCount: z.coerce.number().min(1).max(20).optional().default(5),
     audience: z.string().optional(),
   })
 });
@@ -35,13 +35,14 @@ const generateChapterSchema = z.object({
     chapterSummary: z.string().min(1),
     prevChapterExcerpt: z.string().optional(),
     nextChapterTitle: z.string().optional(),
-    targetWords: z.number().min(100).max(5000).optional(),
+    targetWords: z.coerce.number().min(100).max(5000).optional(),
     tone: z.string().min(1),
     selectedText: z.string().optional()
   })
 });
 
-// Temporarily bypassing requireAuth for Phase 5 Testing
+// Enforce authentication so req.user is populated
+router.use(requireAuth);
 router.use(aiRateLimiter);
 
 router.post('/outline', validateRequest(outlineSchema), generateOutline);

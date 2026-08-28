@@ -5,8 +5,8 @@ import ChapterGenerator from './ChapterGenerator';
 
 const OutlineEditor = ({ initialOutline, onStartOver, bookContext }) => {
   const [chapters, setChapters] = useState(initialOutline.chapters || []);
-  const [bookTitle, setBookTitle] = useState(initialOutline.title || '');
-  const [bookSubtitle, setBookSubtitle] = useState(initialOutline.subtitle || '');
+  const [bookTitle, setBookTitle] = useState(initialOutline.book?.title || initialOutline.title || '');
+  const [bookSubtitle, setBookSubtitle] = useState(initialOutline.book?.subtitle || initialOutline.subtitle || '');
   const [writingChapterIndex, setWritingChapterIndex] = useState(null);
 
   const handleDragEnd = (result) => {

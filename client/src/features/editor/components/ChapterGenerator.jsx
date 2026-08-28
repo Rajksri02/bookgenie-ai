@@ -1,6 +1,8 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
+import MDEditor from '@uiw/react-md-editor';
 import { aiApi } from '../api/aiApi';
-import { RefreshCw, Play, Settings2 } from 'lucide-react';
+import { bookApi } from '../api/bookApi';
+import { RefreshCw, Play, Settings2, CheckCircle2, Save } from 'lucide-react';
 
 const ChapterGenerator = ({ chapter, bookContext, previousChapter, nextChapter }) => {
   const [content, setContent] = useState('');
@@ -12,10 +14,40 @@ const ChapterGenerator = ({ chapter, bookContext, previousChapter, nextChapter }
   
   const textareaRef = useRef(null);
 
-  const handleSaveDraft = () => {
-  localStorage.setItem('bookgenie_chapter_draft', content);
-  alert('Chapter draft saved!');
-};
+  const [saveStatus, setSaveStatus] = useState('saved'); // 'saved', 'saving', 'waiting'
+  const autosaveTimeoutRef = useRef(null);
+
+  const [editorView, setEditorView] = useState(() => {
+    return localStorage.getItem('bookgenie_editor_view') || 'live';
+  });
+
+  const handleEditorViewChange = (view) => {
+    setEditorView(view);
+    localStorage.setItem('bookgenie_editor_view', view);
+  };
+
+  useEffect(() => {
+    if (!content) return;
+    
+    setSaveStatus('waiting');
+    
+    if (autosaveTimeoutRef.current) {
+      clearTimeout(autosaveTimeoutRef.current);
+    }
+    
+    autosaveTimeoutRef.current = setTimeout(async () => {
+      setSaveStatus('saving');
+      try {
+        await bookApi.autosaveChapter(chapter._id || 'temp', content);
+        setSaveStatus('saved');
+      } catch (error) {
+        console.error('Autosave failed:', error);
+        setSaveStatus('waiting');
+      }
+    }, 3000);
+    
+    return () => clearTimeout(autosaveTimeoutRef.current);
+  }, [content, chapter._id]);
 
   const handleGenerate = () => {
     if (isGenerating) return;
@@ -133,14 +165,34 @@ const ChapterGenerator = ({ chapter, bookContext, previousChapter, nextChapter }
         </div>
       )}
 
-      <div className="flex-1 flex flex-col mb-4 min-h-[400px]">
-        <textarea
-          ref={textareaRef}
+      <div className="flex-1 flex flex-col mb-4 min-h-[450px]" data-color-mode="light">
+        <div className="flex justify-between items-center mb-2">
+          <div className="flex gap-2">
+            <button onClick={() => handleEditorViewChange('edit')} className={`px-3 py-1.5 text-xs font-medium rounded-md transition-colors ${editorView === 'edit' ? 'bg-blue-100 text-blue-700' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}>Edit Only</button>
+            <button onClick={() => handleEditorViewChange('live')} className={`px-3 py-1.5 text-xs font-medium rounded-md transition-colors ${editorView === 'live' ? 'bg-blue-100 text-blue-700' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}>Split View</button>
+            <button onClick={() => handleEditorViewChange('preview')} className={`px-3 py-1.5 text-xs font-medium rounded-md transition-colors ${editorView === 'preview' ? 'bg-blue-100 text-blue-700' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}>Preview Only</button>
+          </div>
+          <div className="flex items-center gap-2 text-xs font-medium">
+            {saveStatus === 'saving' && <span className="text-amber-500 flex items-center gap-1.5"><RefreshCw size={14} className="animate-spin" /> Saving...</span>}
+            {saveStatus === 'saved' && <span className="text-green-500 flex items-center gap-1.5"><CheckCircle2 size={14} /> Saved</span>}
+            {saveStatus === 'waiting' && <span className="text-gray-400 flex items-center gap-1.5"><Save size={14} /> Unsaved changes...</span>}
+          </div>
+        </div>
+
+        <MDEditor
           value={content}
-          onChange={(e) => setContent(e.target.value)}
-          onSelect={handleTextSelection}
-          placeholder="Your chapter content will appear here..."
-          className="flex-1 w-full p-4 border border-gray-200 rounded-lg resize-none focus:ring-2 focus:ring-blue-500 focus:border-transparent font-sans leading-relaxed text-gray-800 h-96"
+          onChange={(val) => setContent(val || '')}
+          preview={editorView}
+          height={400}
+          className="flex-1 w-full border border-gray-200 rounded-lg shadow-sm"
+          previewOptions={{
+            className: "prose max-w-none prose-blue p-4"
+          }}
+          textareaProps={{
+            ref: textareaRef,
+            onSelect: handleTextSelection,
+            placeholder: "Your chapter content will appear here..."
+          }}
         />
          <div className="flex justify-end gap-4 text-xs text-gray-500 mt-1">
   <span>{content.length} characters</span>
@@ -149,13 +201,6 @@ const ChapterGenerator = ({ chapter, bookContext, previousChapter, nextChapter }
       </div>
 
          <div className="flex justify-end gap-3">
-        <button
-          type="button"
-          onClick={handleSaveDraft}
-          className="px-4 py-2.5 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors"
-        >
-          Save Draft
-        </button>
 
         <button
           onClick={handleGenerate}
