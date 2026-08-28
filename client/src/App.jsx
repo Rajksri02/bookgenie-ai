@@ -21,25 +21,33 @@ const HomePage = () => (
   </div>
 );
 
-const LoginPage = () => {
-  const { login } = useAuth();
-  
-  // Minimal login form logic for now
-  return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50">
-      <div className="bg-white p-8 rounded-lg shadow-md w-96 text-center">
-        <h2 className="text-2xl font-bold mb-4">Login</h2>
-        <p className="text-gray-600 mb-4">Login UI goes here</p>
-        <Link to="/" className="text-blue-600 hover:underline">Back to Home</Link>
-      </div>
-    </div>
-  );
-};
-
 import OutlineGenerator from './features/editor/components/OutlineGenerator';
+import OutlineEditor from './features/editor/components/OutlineEditor';
+import Login from './features/auth/components/Login';
+import Register from './features/auth/components/Register';
+import ForgotPassword from './features/auth/components/ForgotPassword';
+import ResetPassword from './features/auth/components/ResetPassword';
+import { bookApi } from './features/editor/api/bookApi';
+import { useEffect, useState } from 'react';
 
 const DashboardPage = () => {
   const { user, logout } = useAuth();
+  const [books, setBooks] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchBooks = async () => {
+      try {
+        const response = await bookApi.getBooks();
+        setBooks(response.data || []);
+      } catch (err) {
+        console.error('Failed to fetch books', err);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    fetchBooks();
+  }, []);
   
   return (
     <div className="min-h-screen p-8 bg-gray-50">
@@ -56,11 +64,28 @@ const DashboardPage = () => {
             Logout
           </button>
         </div>
-        
-        {/* Mount OutlineGenerator for Phase 5 Testing */}
-        <div className="mt-8">
-          <OutlineGenerator />
-        </div>
+        {isLoading ? (
+          <div className="mt-8">
+            <div className="animate-pulse flex flex-col space-y-4 max-w-2xl mx-auto bg-white rounded-xl shadow-sm border border-gray-100 p-8">
+              <div className="h-6 bg-gray-200 rounded w-1/3 mb-6"></div>
+              <div className="h-20 bg-gray-200 rounded w-full"></div>
+              <div className="h-10 bg-gray-200 rounded w-full"></div>
+              <div className="h-10 bg-gray-200 rounded w-full"></div>
+            </div>
+          </div>
+        ) : books.length > 0 ? (
+          <div className="mt-8">
+            <OutlineEditor 
+              initialOutline={books[0]} 
+              onStartOver={() => setBooks([])}
+              bookContext={books[0]}
+            />
+          </div>
+        ) : (
+          <div className="mt-8">
+            <OutlineGenerator onGenerate={(newBook) => setBooks([newBook])} />
+          </div>
+        )}
       </div>
     </div>
   );
@@ -72,15 +97,14 @@ function App() {
       <Router>
         <Routes>
           <Route path="/" element={<HomePage />} />
-          <Route path="/login" element={<LoginPage />} />
-          {/* <Route path="/register" element={<RegisterPage />} /> */}
+          <Route path="/login" element={<Login />} />
+          <Route path="/register" element={<Register />} />
+          <Route path="/forgot-password" element={<ForgotPassword />} />
+          <Route path="/reset-password/:token" element={<ResetPassword />} />
           
-          {/* Temporarily unprotected for Phase 5 Testing */}
-          <Route path="/dashboard" element={<DashboardPage />} />
-
           {/* Protected Routes */}
           <Route element={<ProtectedRoute />}>
-            {/* Real dashboard will go back here later */}
+            <Route path="/dashboard" element={<DashboardPage />} />
           </Route>
         </Routes>
       </Router>

@@ -1,7 +1,7 @@
 const express = require('express');
-const { register, login, refresh, getMe, logout } = require('../controllers/auth.controller');
+const { register, login, refresh, getMe, logout, forgotPassword, resetPassword } = require('../controllers/auth.controller');
 const validateRequest = require('../middlewares/validateRequest');
-const { registerSchema, loginSchema } = require('../validations/auth.validation');
+const { registerSchema, loginSchema, forgotPasswordSchema, resetPasswordSchema } = require('../validations/auth.validation');
 const requireAuth = require('../middlewares/requireAuth');
 const { apiRateLimiter } = require('../middlewares/rateLimiter');
 const rateLimit = require('express-rate-limit');
@@ -20,6 +20,8 @@ const loginLimiter = rateLimit({
 
 router.post('/register', apiRateLimiter, validateRequest(registerSchema), register);
 router.post('/login', loginLimiter, validateRequest(loginSchema), login);
+router.post('/forgot-password', apiRateLimiter, validateRequest(forgotPasswordSchema), forgotPassword);
+router.put('/reset-password/:token', apiRateLimiter, validateRequest(resetPasswordSchema), resetPassword);
 router.post('/refresh', refresh);
 router.post('/logout', logout);
 

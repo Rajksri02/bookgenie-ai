@@ -19,7 +19,24 @@ const loginSchema = z.object({
   }),
 });
 
+const forgotPasswordSchema = z.object({
+  body: z.object({
+    email: z.string().email('Please provide a valid email'),
+  }),
+});
+
+const resetPasswordSchema = z.object({
+  body: z.object({
+    password: z
+      .string()
+      .min(8, 'Password must be at least 8 characters long')
+      .regex(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/, 'Password must contain at least one uppercase letter, one lowercase letter, and one number'),
+  }),
+});
+
 module.exports = {
   registerSchema,
   loginSchema,
+  forgotPasswordSchema,
+  resetPasswordSchema,
 };
