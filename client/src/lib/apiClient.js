@@ -1,5 +1,16 @@
 import axios from 'axios';
 
+// In-memory token storage (more secure than localStorage)
+let memoryToken = null;
+
+export const setMemoryToken = (token) => {
+  memoryToken = token;
+};
+
+export const getMemoryToken = () => {
+  return memoryToken;
+};
+
 // Create a centralized axios instance
 const apiClient = axios.create({
   baseURL: import.meta.env.VITE_API_URL || 'http://localhost:5050/api',
@@ -12,7 +23,7 @@ const apiClient = axios.create({
 // Request Interceptor: Attach the JWT token to every request if it exists
 apiClient.interceptors.request.use(
   (config) => {
-    const token = localStorage.getItem('token');
+    const token = getMemoryToken();
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }
@@ -46,8 +57,10 @@ apiClient.interceptors.response.use(
   async (error) => {
     const originalRequest = error.config;
 
-    // If 401 Unauthorized and we haven't already tried to refresh
-    if (error.response?.status === 401 && !originalRequest._retry) {
+    const isAuthRoute = originalRequest.url?.includes('/auth/login') || originalRequest.url?.includes('/auth/register');
+
+    // If 401 Unauthorized, we haven't already tried to refresh, and it's not a login/register request
+    if (error.response?.status === 401 && !originalRequest._retry && !isAuthRoute) {
       if (isRefreshing) {
         // If already refreshing, queue this request until refresh is done
         return new Promise(function(resolve, reject) {
@@ -74,8 +87,8 @@ apiClient.interceptors.response.use(
 
         const newAccessToken = refreshResponse.data.accessToken;
         
-        // Save new token
-        localStorage.setItem('token', newAccessToken);
+        // Save new token in memory
+        setMemoryToken(newAccessToken);
         
         // Update header of original request
         originalRequest.headers.Authorization = `Bearer ${newAccessToken}`;
@@ -86,9 +99,9 @@ apiClient.interceptors.response.use(
         return apiClient(originalRequest);
       } catch (refreshError) {
         processQueue(refreshError, null);
-        // Refresh failed (e.g., token expired or invalid). Clear state and redirect.
-        localStorage.removeItem('token');
-        window.location.href = '/login';
+        // Refresh failed (e.g., token expired or invalid). Clear state and redirect via event.
+        setMemoryToken(null);
+        window.dispatchEvent(new Event('auth:unauthorized'));
         return Promise.reject(refreshError);
       } finally {
         isRefreshing = false;
