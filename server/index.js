@@ -1,15 +1,16 @@
+// Load env vars FIRST before requiring routes that rely on them
+const dotenv = require('dotenv');
+dotenv.config();
+
 const express = require('express');
 const cors = require('cors');
-const dotenv = require('dotenv');
 const cookieParser = require('cookie-parser');
 const connectDB = require('./src/config/db');
 const errorHandler = require('./src/middlewares/errorHandler');
 const authRoutes = require('./src/routes/auth.routes');
 const aiRoutes = require('./src/routes/ai.routes');
 const bookRoutes = require('./src/routes/book.routes');
-
-// Load env vars
-dotenv.config();
+const imageRoutes = require('./src/routes/image.routes');
 
 // Connect to database
 connectDB();
@@ -35,6 +36,7 @@ app.use(
 app.use('/api/auth', authRoutes);
 app.use('/api/ai', aiRoutes);
 app.use('/api/books', bookRoutes);
+app.use('/api/images', imageRoutes);
 
 // Base route for health check
 app.get('/', (req, res) => {
