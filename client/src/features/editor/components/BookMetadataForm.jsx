@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import imageCompression from 'browser-image-compression';
 import { bookApi } from '../api/bookApi';
 import { ImagePlus, Sparkles, Loader2 } from 'lucide-react';
+import toast from 'react-hot-toast';
 
 const BookMetadataForm = ({ metadata, setMetadata, initialBookContext = {} }) => {
   const [isUploading, setIsUploading] = useState(false);
@@ -33,7 +34,7 @@ const BookMetadataForm = ({ metadata, setMetadata, initialBookContext = {} }) =>
       }
     } catch (error) {
       console.error('Error uploading image:', error);
-      alert('Failed to upload image. Make sure Cloudinary is configured in the backend.');
+      toast.error('Failed to upload image. Make sure Cloudinary is configured in the backend.');
     } finally {
       setIsUploading(false);
     }
@@ -41,7 +42,7 @@ const BookMetadataForm = ({ metadata, setMetadata, initialBookContext = {} }) =>
 
   const handleGenerateCover = async () => {
     if (!metadata.title) {
-      alert("Please provide a book title first.");
+      toast.error("Please provide a book title first.");
       return;
     }
     
@@ -60,74 +61,74 @@ const BookMetadataForm = ({ metadata, setMetadata, initialBookContext = {} }) =>
       }
     } catch (error) {
       console.error('Error generating cover:', error);
-      alert('Failed to generate cover. Check server logs.');
+      toast.error('Failed to generate cover. Check server logs.');
     } finally {
       setIsGenerating(false);
     }
   };
 
   return (
-    <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 mb-8 flex flex-col md:flex-row gap-8">
+    <div className="bg-white rounded-xl shadow-sm border border-slate-100 p-6 mb-8 flex flex-col md:flex-row gap-8">
       
       {/* Form Fields */}
       <div className="flex-1 space-y-4">
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Book Title *</label>
+          <label className="block text-sm font-medium text-slate-700 mb-1">Book Title *</label>
           <input 
             type="text" 
             name="title"
             value={metadata.title || ''} 
             onChange={handleChange}
-            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            className="w-full px-4 py-2 border border-slate-300 rounded-xl focus:outline-none focus:ring-1 focus:ring-primary-500 focus:border-primary-500 transition-shadow"
             placeholder="Enter book title"
           />
         </div>
         
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Subtitle</label>
+          <label className="block text-sm font-medium text-slate-700 mb-1">Subtitle</label>
           <input 
             type="text" 
             name="subtitle"
             value={metadata.subtitle || ''} 
             onChange={handleChange}
-            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            className="w-full px-4 py-2 border border-slate-300 rounded-xl focus:outline-none focus:ring-1 focus:ring-primary-500 focus:border-primary-500 transition-shadow"
             placeholder="Enter subtitle (optional)"
           />
         </div>
 
         <div className="grid grid-cols-2 gap-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Author</label>
+            <label className="block text-sm font-medium text-slate-700 mb-1">Author</label>
             <input 
               type="text" 
               name="author"
               value={metadata.author || ''} 
               onChange={handleChange}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              className="w-full px-4 py-2 border border-slate-300 rounded-xl focus:outline-none focus:ring-1 focus:ring-primary-500 focus:border-primary-500 transition-shadow"
               placeholder="Author name"
             />
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Genre</label>
+            <label className="block text-sm font-medium text-slate-700 mb-1">Genre</label>
             <input 
               type="text" 
               name="genre"
               value={metadata.genre || ''} 
               onChange={handleChange}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              className="w-full px-4 py-2 border border-slate-300 rounded-xl focus:outline-none focus:ring-1 focus:ring-primary-500 focus:border-primary-500 transition-shadow"
               placeholder="e.g. Science Fiction"
             />
           </div>
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Description</label>
+          <label className="block text-sm font-medium text-slate-700 mb-1">Description</label>
           <textarea 
             name="description"
             value={metadata.description || ''} 
             onChange={handleChange}
             rows={3}
-            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            className="w-full px-4 py-2 border border-slate-300 rounded-xl focus:outline-none focus:ring-1 focus:ring-primary-500 focus:border-primary-500 transition-shadow"
             placeholder="Brief book synopsis or description"
           />
         </div>
@@ -135,9 +136,9 @@ const BookMetadataForm = ({ metadata, setMetadata, initialBookContext = {} }) =>
 
       {/* Cover Image Section */}
       <div className="w-full md:w-64 flex flex-col gap-4 shrink-0">
-        <label className="block text-sm font-medium text-gray-700 mb-1">Cover Image (2:3 Ratio)</label>
+        <label className="block text-sm font-medium text-slate-700 mb-1">Cover Image (2:3 Ratio)</label>
         
-        <div className="relative aspect-[2/3] w-full bg-gray-50 border-2 border-dashed border-gray-300 rounded-xl overflow-hidden flex items-center justify-center group">
+        <div className="relative aspect-[2/3] w-full bg-slate-50 border-2 border-dashed border-slate-300 rounded-xl overflow-hidden flex items-center justify-center group">
           {metadata.coverImage ? (
             <img 
               src={metadata.coverImage} 
@@ -145,7 +146,7 @@ const BookMetadataForm = ({ metadata, setMetadata, initialBookContext = {} }) =>
               className="w-full h-full object-cover"
             />
           ) : (
-            <div className="text-center p-4 text-gray-400">
+            <div className="text-center p-4 text-slate-400">
               <ImagePlus className="w-8 h-8 mx-auto mb-2 opacity-50" />
               <span className="text-xs">No cover selected</span>
             </div>
@@ -165,8 +166,8 @@ const BookMetadataForm = ({ metadata, setMetadata, initialBookContext = {} }) =>
           
           {(isUploading || isGenerating) && (
             <div className="absolute inset-0 bg-white/80 flex flex-col items-center justify-center">
-              <Loader2 className="w-8 h-8 text-blue-600 animate-spin mb-2" />
-              <span className="text-sm font-medium text-gray-700">
+              <Loader2 className="w-8 h-8 text-primary-600 animate-spin mb-2" />
+              <span className="text-sm font-medium text-slate-700">
                 {isGenerating ? 'AI Generating...' : 'Uploading...'}
               </span>
             </div>
@@ -177,7 +178,7 @@ const BookMetadataForm = ({ metadata, setMetadata, initialBookContext = {} }) =>
           type="button"
           onClick={handleGenerateCover}
           disabled={isUploading || isGenerating || !metadata.title}
-          className="w-full py-2 px-4 bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white rounded-lg flex items-center justify-center gap-2 font-medium transition-all shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
+          className="w-full py-2 px-4 bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-700 hover:to-indigo-700 text-white rounded-xl flex items-center justify-center gap-2 font-medium transition-all shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
         >
           <Sparkles className="w-4 h-4" />
           AI Generate Cover

@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
-import { GripVertical, Trash2, RefreshCw, Edit2, Check } from 'lucide-react';
+import { GripVertical, Trash2, RefreshCw, Edit2, Check, PenLine } from 'lucide-react';
 import { aiApi } from '../api/aiApi';
+import toast from 'react-hot-toast';
 
 const OutlineCard = ({ id, chapter, index, onUpdate, onDelete, onWrite, bookContext }) => {
   const [isEditing, setIsEditing] = useState(false);
@@ -41,7 +42,7 @@ const OutlineCard = ({ id, chapter, index, onUpdate, onDelete, onWrite, bookCont
       setFeedback('');
     } catch (err) {
       console.error('Failed to regenerate chapter:', err);
-      alert('Failed to regenerate chapter. Please try again.');
+      toast.error('Failed to regenerate chapter. Please try again.');
     } finally {
       setIsRegenerating(false);
     }
@@ -64,8 +65,8 @@ const OutlineCard = ({ id, chapter, index, onUpdate, onDelete, onWrite, bookCont
     <div
       ref={setNodeRef}
       style={style}
-      className={`mb-4 bg-white rounded-lg border shadow-sm ${
-        isDragging ? 'border-blue-500 shadow-lg opacity-80' : 'border-gray-200'
+      className={`mb-4 bg-white rounded-xl border shadow-sm ${
+        isDragging ? 'border-primary-500 shadow-lg opacity-80' : 'border-slate-200'
       }`}
     >
       <div className="flex items-start p-4">
@@ -73,7 +74,7 @@ const OutlineCard = ({ id, chapter, index, onUpdate, onDelete, onWrite, bookCont
         <div
           {...attributes}
           {...listeners}
-          className="pt-1 mr-3 text-gray-400 hover:text-gray-600 cursor-grab active:cursor-grabbing outline-none focus-visible:ring-2 focus-visible:ring-blue-500 rounded"
+          className="pt-1 mr-3 text-slate-400 hover:text-slate-600 cursor-grab active:cursor-grabbing outline-none focus-visible:ring-2 focus-visible:ring-primary-500 rounded"
           tabIndex={0}
           role="button"
           aria-label={`Drag ${chapter.title}`}
@@ -88,27 +89,27 @@ const OutlineCard = ({ id, chapter, index, onUpdate, onDelete, onWrite, bookCont
                 type="text"
                 value={editData.title || ''}
                 onChange={(e) => setEditData({ ...editData, title: e.target.value })}
-                className="w-full font-bold text-lg px-2 py-1 border border-blue-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
+                className="w-full font-bold text-lg px-2 py-1 border border-primary-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-primary-500"
               />
               <textarea
                 value={editData.summary || ''}
                 onChange={(e) => setEditData({ ...editData, summary: e.target.value })}
-                className="w-full text-gray-700 px-2 py-1 border border-blue-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
+                className="w-full text-slate-700 px-2 py-1 border border-primary-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-primary-500"
                 rows={3}
               />
               <div className="flex items-center gap-2">
-                <span className="text-sm text-gray-500">Word Count:</span>
+                <span className="text-sm text-slate-500">Word Count:</span>
                 <input
                   type="number"
                   value={editData.estimatedWords || 0}
                   onChange={(e) => setEditData({ ...editData, estimatedWords: parseInt(e.target.value, 10) || 0 })}
-                  className="w-24 px-2 py-1 border border-blue-300 rounded focus:outline-none text-sm"
+                  className="w-24 px-2 py-1 border border-primary-300 rounded-lg focus:outline-none text-sm"
                 />
               </div>
               <div className="flex gap-2 pt-2">
                 <button
                   onClick={handleSaveEdit}
-                  className="flex items-center gap-1 text-sm bg-blue-600 text-white px-3 py-1.5 rounded hover:bg-blue-700"
+                  className="flex items-center gap-1 text-sm bg-primary-600 text-white px-3 py-1.5 rounded-lg hover:bg-primary-700 transition-colors"
                 >
                   <Check size={16} /> Save
                 </button>
@@ -117,7 +118,7 @@ const OutlineCard = ({ id, chapter, index, onUpdate, onDelete, onWrite, bookCont
                     setEditData({ ...chapter });
                     setIsEditing(false);
                   }}
-                  className="text-sm text-gray-600 hover:text-gray-900 px-3 py-1.5"
+                  className="text-sm text-slate-600 hover:text-slate-900 px-3 py-1.5 transition-colors"
                 >
                   Cancel
                 </button>
@@ -126,24 +127,24 @@ const OutlineCard = ({ id, chapter, index, onUpdate, onDelete, onWrite, bookCont
           ) : (
             <>
               <div className="flex justify-between items-start mb-2">
-                <h3 className="font-bold text-lg text-gray-900 flex items-center gap-2 flex-wrap">
-                  <span className="text-gray-400 mr-1">{index + 1}.</span>
+                <h3 className="font-bold text-lg text-slate-900 flex items-center gap-2 flex-wrap">
+                  <span className="text-slate-400 mr-1">{index + 1}.</span>
                   {chapter.title}
                   {getStatusBadge(chapter.status)}
                 </h3>
-                <div className="flex items-center gap-2 text-gray-400 shrink-0">
-                  <button onClick={() => setIsEditing(true)} className="hover:text-blue-600 p-1 rounded" title="Edit Manually">
+                <div className="flex items-center gap-2 text-slate-400 shrink-0">
+                  <button onClick={() => setIsEditing(true)} className="hover:text-primary-600 p-1 rounded transition-colors" title="Edit Manually">
                     <Edit2 size={16} />
                   </button>
-                  <button onClick={() => onDelete(index)} className="hover:text-red-600 p-1 rounded" title="Delete Chapter">
+                  <button onClick={() => onDelete(index)} className="hover:text-red-600 p-1 rounded transition-colors" title="Delete Chapter">
                     <Trash2 size={16} />
                   </button>
                 </div>
               </div>
-              <p className="text-gray-700 mb-3 text-sm leading-relaxed">{chapter.summary}</p>
+              <p className="text-slate-700 mb-3 text-sm leading-relaxed">{chapter.summary}</p>
               
-              <div className="flex justify-between items-end border-t border-gray-100 pt-3 mt-3">
-                <span className="text-xs font-medium text-gray-500 bg-gray-100 px-2 py-1 rounded">
+              <div className="flex justify-between items-end border-t border-slate-100 pt-3 mt-3">
+                <span className="text-xs font-medium text-slate-500 bg-slate-100 px-2 py-1 rounded-md">
                   ~{chapter.estimatedWords} words
                 </span>
                 
@@ -154,20 +155,21 @@ const OutlineCard = ({ id, chapter, index, onUpdate, onDelete, onWrite, bookCont
                     placeholder="Feedback for AI (optional)" 
                     value={feedback}
                     onChange={(e) => setFeedback(e.target.value)}
-                    className="text-xs px-2 py-1 border border-gray-200 rounded w-32 sm:w-48 focus:outline-none focus:border-blue-400"
+                    className="text-xs px-2 py-1.5 border border-slate-200 rounded-lg w-32 sm:w-48 focus:outline-none focus:border-primary-400 transition-colors"
                   />
                   <button 
                     onClick={handleRegenerate}
                     disabled={isRegenerating}
-                    className={`flex items-center gap-1 text-xs px-2 py-1 rounded text-blue-600 hover:bg-blue-50 transition-colors border border-transparent hover:border-blue-200 ${isRegenerating ? 'opacity-50 cursor-not-allowed' : ''}`}
+                    className={`flex items-center gap-1 text-xs px-2 py-1.5 rounded-lg text-primary-600 hover:bg-primary-50 transition-colors border border-transparent hover:border-primary-200 ${isRegenerating ? 'opacity-50 cursor-not-allowed' : ''}`}
                   >
                     <RefreshCw size={14} className={isRegenerating ? 'animate-spin' : ''} />
                     {isRegenerating ? 'Regenerating...' : 'Regenerate'}
                   </button>
                   <button
                     onClick={onWrite}
-                    className="flex items-center gap-1 text-xs px-3 py-1 rounded bg-blue-600 text-white hover:bg-blue-700 transition-colors shadow-sm"
+                    className="flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-lg bg-primary-600 text-white hover:bg-primary-700 transition-colors shadow-sm"
                   >
+                    <PenLine size={14} />
                     Write Chapter
                   </button>
                 </div>

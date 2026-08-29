@@ -3,6 +3,7 @@ import MDEditor from '@uiw/react-md-editor';
 import { aiApi } from '../api/aiApi';
 import { bookApi } from '../api/bookApi';
 import { RefreshCw, Play, Settings2, CheckCircle2, Save } from 'lucide-react';
+import toast from 'react-hot-toast';
 
 const ChapterGenerator = ({ chapter, bookContext, previousChapter, nextChapter }) => {
   const [content, setContent] = useState('');
@@ -88,7 +89,7 @@ const ChapterGenerator = ({ chapter, bookContext, previousChapter, nextChapter }
       },
       (error) => {
         console.error('Generation error:', error);
-        alert('Failed to generate chapter. ' + (error.message || ''));
+        toast.error('Failed to generate chapter. ' + (error.message || ''));
         setIsGenerating(false);
       }
     );
@@ -107,27 +108,27 @@ const ChapterGenerator = ({ chapter, bookContext, previousChapter, nextChapter }
   };
 
   return (
-    <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 flex flex-col h-full">
+    <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6 flex flex-col h-full">
       <div className="flex justify-between items-center mb-6">
         <div>
-          <h2 className="text-xl font-bold text-gray-900">{chapter.title}</h2>
-          <p className="text-sm text-gray-500 mt-1">{chapter.summary}</p>
+          <h2 className="text-xl font-bold text-slate-900 tracking-tight">{chapter.title}</h2>
+          <p className="text-sm text-slate-500 mt-1 leading-relaxed">{chapter.summary}</p>
         </div>
         
         {generationsRemaining !== null && (
-          <div className="text-sm font-medium text-blue-600 bg-blue-50 px-3 py-1 rounded-full">
+          <div className="text-sm font-medium text-primary-600 bg-primary-50 px-3 py-1 rounded-full">
             {generationsRemaining} generations remaining today
           </div>
         )}
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6 bg-gray-50 p-4 rounded-lg border border-gray-100">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6 bg-slate-50 p-4 rounded-xl border border-slate-100">
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Generation Mode</label>
+          <label className="block text-sm font-medium text-slate-700 mb-1">Generation Mode</label>
           <select 
             value={mode} 
             onChange={(e) => setMode(e.target.value)}
-            className="w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 text-sm"
+            className="w-full border-slate-300 rounded-lg shadow-sm focus:ring-1 focus:ring-primary-500 focus:border-primary-500 text-sm outline-none px-3 py-2"
           >
             <option value="full_draft">Write Full Draft</option>
             <option value="expand_text">Expand Selected Text</option>
@@ -137,8 +138,8 @@ const ChapterGenerator = ({ chapter, bookContext, previousChapter, nextChapter }
         
         <div className="md:col-span-2">
           <div className="flex justify-between">
-            <label className="block text-sm font-medium text-gray-700 mb-1">Target Word Count</label>
-            <span className="text-sm text-blue-600 font-medium">{targetWords} words</span>
+            <label className="block text-sm font-medium text-slate-700 mb-1">Target Word Count</label>
+            <span className="text-sm text-primary-600 font-medium">{targetWords} words</span>
           </div>
           <input 
             type="range" 
@@ -147,20 +148,20 @@ const ChapterGenerator = ({ chapter, bookContext, previousChapter, nextChapter }
             step="100"
             value={targetWords}
             onChange={(e) => setTargetWords(parseInt(e.target.value))}
-            className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer mt-2"
+            className="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer mt-2"
           />
         </div>
       </div>
 
       {mode !== 'full_draft' && selectedText && (
-        <div className="mb-4 p-3 bg-blue-50 border border-blue-100 rounded-md">
-          <h4 className="text-xs font-bold text-blue-800 uppercase mb-1">Selected Text:</h4>
-          <p className="text-sm text-blue-900 italic line-clamp-3">"{selectedText}"</p>
+        <div className="mb-4 p-3 bg-primary-50 border border-primary-100 rounded-lg">
+          <h4 className="text-xs font-bold text-primary-800 uppercase mb-1">Selected Text:</h4>
+          <p className="text-sm text-primary-900 italic line-clamp-3">"{selectedText}"</p>
         </div>
       )}
 
       {mode !== 'full_draft' && !selectedText && (
-        <div className="mb-4 text-sm text-amber-600 bg-amber-50 p-3 rounded-md border border-amber-100">
+        <div className="mb-4 text-sm text-amber-600 bg-amber-50 p-3 rounded-lg border border-amber-100">
           Please select some text in the editor below to use this mode.
         </div>
       )}
@@ -168,14 +169,14 @@ const ChapterGenerator = ({ chapter, bookContext, previousChapter, nextChapter }
       <div className="flex-1 flex flex-col mb-4 min-h-[450px]" data-color-mode="light">
         <div className="flex justify-between items-center mb-2">
           <div className="flex gap-2">
-            <button onClick={() => handleEditorViewChange('edit')} className={`px-3 py-1.5 text-xs font-medium rounded-md transition-colors ${editorView === 'edit' ? 'bg-blue-100 text-blue-700' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}>Edit Only</button>
-            <button onClick={() => handleEditorViewChange('live')} className={`px-3 py-1.5 text-xs font-medium rounded-md transition-colors ${editorView === 'live' ? 'bg-blue-100 text-blue-700' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}>Split View</button>
-            <button onClick={() => handleEditorViewChange('preview')} className={`px-3 py-1.5 text-xs font-medium rounded-md transition-colors ${editorView === 'preview' ? 'bg-blue-100 text-blue-700' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}>Preview Only</button>
+            <button onClick={() => handleEditorViewChange('edit')} className={`px-3 py-1.5 text-xs font-medium rounded-lg transition-colors ${editorView === 'edit' ? 'bg-primary-100 text-primary-700' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'}`}>Edit Only</button>
+            <button onClick={() => handleEditorViewChange('live')} className={`px-3 py-1.5 text-xs font-medium rounded-lg transition-colors ${editorView === 'live' ? 'bg-primary-100 text-primary-700' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'}`}>Split View</button>
+            <button onClick={() => handleEditorViewChange('preview')} className={`px-3 py-1.5 text-xs font-medium rounded-lg transition-colors ${editorView === 'preview' ? 'bg-primary-100 text-primary-700' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'}`}>Preview Only</button>
           </div>
           <div className="flex items-center gap-2 text-xs font-medium">
             {saveStatus === 'saving' && <span className="text-amber-500 flex items-center gap-1.5"><RefreshCw size={14} className="animate-spin" /> Saving...</span>}
             {saveStatus === 'saved' && <span className="text-green-500 flex items-center gap-1.5"><CheckCircle2 size={14} /> Saved</span>}
-            {saveStatus === 'waiting' && <span className="text-gray-400 flex items-center gap-1.5"><Save size={14} /> Unsaved changes...</span>}
+            {saveStatus === 'waiting' && <span className="text-slate-400 flex items-center gap-1.5"><Save size={14} /> Unsaved changes...</span>}
           </div>
         </div>
 
@@ -184,9 +185,9 @@ const ChapterGenerator = ({ chapter, bookContext, previousChapter, nextChapter }
           onChange={(val) => setContent(val || '')}
           preview={editorView}
           height={400}
-          className="flex-1 w-full border border-gray-200 rounded-lg shadow-sm"
+          className="flex-1 w-full border border-slate-200 rounded-xl shadow-sm overflow-hidden"
           previewOptions={{
-            className: "prose max-w-none prose-blue p-4"
+            className: "prose max-w-none prose-primary p-4"
           }}
           textareaProps={{
             ref: textareaRef,
@@ -194,10 +195,10 @@ const ChapterGenerator = ({ chapter, bookContext, previousChapter, nextChapter }
             placeholder: "Your chapter content will appear here..."
           }}
         />
-         <div className="flex justify-end gap-4 text-xs text-gray-500 mt-1">
-  <span>{content.length} characters</span>
-  <span>{content.trim() ? content.trim().split(/\s+/).length : 0} words</span>
-</div>
+         <div className="flex justify-end gap-4 text-xs text-slate-500 mt-2">
+          <span>{content.length} characters</span>
+          <span>{content.trim() ? content.trim().split(/\s+/).length : 0} words</span>
+        </div>
       </div>
 
          <div className="flex justify-end gap-3">
@@ -212,10 +213,10 @@ const ChapterGenerator = ({ chapter, bookContext, previousChapter, nextChapter }
           className={`flex items-center gap-2 px-6 py-2.5 rounded-lg font-medium text-white transition-all
             ${
               isGenerating
-                ? 'bg-blue-400 cursor-not-allowed'
+                ? 'bg-primary-400 cursor-not-allowed'
                 : generationsRemaining === 0
-                  ? 'bg-gray-400 cursor-not-allowed'
-                  : 'bg-blue-600 hover:bg-blue-700 shadow-sm hover:shadow-md'
+                  ? 'bg-slate-400 cursor-not-allowed'
+                  : 'bg-primary-600 hover:bg-primary-700 shadow-sm hover:shadow-md'
             }`}
         >
           {isGenerating ? (

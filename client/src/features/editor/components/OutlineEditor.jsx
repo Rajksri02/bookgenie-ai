@@ -17,6 +17,8 @@ import OutlineCard from './OutlineCard';
 import ChapterGenerator from './ChapterGenerator';
 import BookMetadataForm from './BookMetadataForm';
 import { bookApi } from '../api/bookApi';
+import toast from 'react-hot-toast';
+import { ArrowLeft, Save, RotateCcw } from 'lucide-react';
 
 const OutlineEditor = ({ initialOutline, onStartOver, bookContext }) => {
   // Initialize from localStorage if available, otherwise use initialOutline
@@ -91,7 +93,7 @@ const OutlineEditor = ({ initialOutline, onStartOver, bookContext }) => {
           await bookApi.reorderChapters(bookId, chapterIds);
         } catch (error) {
           console.error('Failed to save reordered chapters:', error);
-          alert('Failed to save the new chapter order.');
+          toast.error('Failed to save the new chapter order.');
           // Rollback
           setChapters(oldChapters);
         }
@@ -115,7 +117,8 @@ const OutlineEditor = ({ initialOutline, onStartOver, bookContext }) => {
 
   const handleCommitToBook = async () => {
     if (!metadata.title) {
-      return alert("Book title is required.");
+      toast.error("Book title is required.");
+      return;
     }
     try {
       setIsSaving(true);
@@ -131,13 +134,13 @@ const OutlineEditor = ({ initialOutline, onStartOver, bookContext }) => {
       if (res.success) {
         // Clear draft
         localStorage.removeItem(DRAFT_KEY);
-        alert(existingBookId ? "Book successfully updated!" : "Book successfully saved to the database!");
+        toast.success(existingBookId ? "Book successfully updated!" : "Book successfully saved to the database!");
         // Refresh page to trigger dashboard load
-        window.location.reload();
+        setTimeout(() => window.location.reload(), 1000);
       }
     } catch (error) {
       console.error('Failed to save book:', error);
-      alert(error.error || 'Failed to save book to database.');
+      toast.error(error.error || 'Failed to save book to database.');
     } finally {
       setIsSaving(false);
     }
@@ -152,9 +155,10 @@ const OutlineEditor = ({ initialOutline, onStartOver, bookContext }) => {
       <div className="max-w-5xl mx-auto py-8 px-4 h-screen flex flex-col">
         <button 
           onClick={() => setWritingChapterIndex(null)}
-          className="mb-4 text-blue-600 hover:underline self-start flex items-center gap-1 font-medium"
+          className="mb-4 text-primary-600 hover:text-primary-700 hover:underline self-start flex items-center gap-1 font-medium transition-colors"
         >
-          &larr; Back to Outline
+          <ArrowLeft size={18} />
+          Back to Outline
         </button>
         <div className="flex-1">
           <ChapterGenerator 
@@ -175,22 +179,24 @@ const OutlineEditor = ({ initialOutline, onStartOver, bookContext }) => {
   return (
     <div className="max-w-4xl mx-auto py-8 px-4">
       <div className="flex justify-between items-center mb-6">
-        <h1 className="text-2xl font-bold text-gray-900">Book Details</h1>
+        <h1 className="text-2xl font-bold text-slate-900 tracking-tight">Book Details</h1>
         <div className="flex gap-3">
           <button 
             onClick={() => {
               localStorage.removeItem(DRAFT_KEY);
               onStartOver();
             }}
-            className="px-4 py-2 text-gray-600 bg-white border border-gray-300 rounded-md hover:bg-gray-50 transition-colors"
+            className="px-4 py-2 flex items-center gap-2 text-slate-600 bg-white border border-slate-300 rounded-xl hover:bg-slate-50 transition-colors shadow-sm"
           >
+            <RotateCcw size={16} />
             Start Over
           </button>
           <button 
             onClick={handleCommitToBook}
             disabled={isSaving}
-            className="px-6 py-2 bg-green-600 text-white font-medium rounded-md hover:bg-green-700 transition-colors shadow-sm disabled:opacity-50"
+            className="px-6 py-2 flex items-center gap-2 bg-primary-600 text-white font-medium rounded-xl hover:bg-primary-700 transition-colors shadow-sm disabled:opacity-50"
           >
+            <Save size={18} />
             {isSaving ? 'Saving...' : (initialOutline._id || bookContext?._id) ? 'Save Changes' : 'Create Book'}
           </button>
         </div>
@@ -203,7 +209,7 @@ const OutlineEditor = ({ initialOutline, onStartOver, bookContext }) => {
       />
 
       <div className="flex justify-between items-end mb-4">
-        <h2 className="text-xl font-bold text-gray-800">Chapters ({chapters.length})</h2>
+        <h2 className="text-xl font-bold text-slate-800 tracking-tight">Chapters ({chapters.length})</h2>
       </div>
 
 
@@ -233,7 +239,7 @@ const OutlineEditor = ({ initialOutline, onStartOver, bookContext }) => {
         </SortableContext>
       </DndContext>
       
-      <div className="mt-8 text-center text-sm text-gray-400">
+      <div className="mt-8 text-center text-sm text-slate-400">
         Total estimated words: {chapters.reduce((acc, curr) => acc + (curr.estimatedWords || 0), 0).toLocaleString()}
       </div>
     </div>
