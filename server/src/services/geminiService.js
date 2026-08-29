@@ -187,8 +187,62 @@ Return ONLY the rewritten text in Markdown. Keep the length roughly similar.`;
   return responseStream;
 };
 
+const generateCoverImage = async ({ title, subtitle, description, genre, tone }) => {
+  console.log(`Generating cover for: "${title}" using Gemini Text + Pollinations AI...`);
+  
+  const client = getAiClient();
+  
+  // 1. Use free Gemini Text to generate a highly detailed visual prompt
+  const textPrompt = `You are an expert book cover designer. I am writing a book.
+Title: "${title}"
+Subtitle: "${subtitle || 'None'}"
+Genre: ${genre}
+Tone: ${tone}
+Description: ${description || 'None'}
+
+Write a highly detailed, 2-sentence visual prompt describing the perfect book cover image for this book. 
+Focus strictly on the visual elements (e.g., subjects, lighting, colors, aesthetic, background). 
+Do NOT include the book title text in the prompt, just the art. Make it cinematic and beautiful.`;
+
+  let visualPrompt = '';
+  try {
+    const response = await client.models.generateContent({
+      model: "gemini-3.6-flash",
+      contents: textPrompt
+    });
+    visualPrompt = response.text.trim();
+    console.log("Gemini generated visual prompt:", visualPrompt);
+  } catch (error) {
+    console.error("Failed to generate visual prompt with Gemini, falling back to basic prompt.", error);
+    visualPrompt = `A cinematic, aesthetic book cover illustration for a book titled "${title}". Genre: ${genre}. Tone: ${tone}.`;
+  }
+  
+  // 2. Pass the detailed prompt to Pollinations AI
+  try {
+    const encodedPrompt = encodeURIComponent(visualPrompt + " minimalist typography elegant premium design");
+    const url = `https://image.pollinations.ai/prompt/${encodedPrompt}?width=800&height=1200&nologo=true&seed=${Math.floor(Math.random() * 1000)}`;
+    
+    const response = await fetch(url);
+    if (!response.ok) {
+      throw new Error(`Pollinations API failed with status: ${response.status}`);
+    }
+    
+    // Convert to base64 buffer for Cloudinary upload
+    const arrayBuffer = await response.arrayBuffer();
+    const buffer = Buffer.from(arrayBuffer);
+    const base64Image = buffer.toString('base64');
+    
+    // Cloudinary expects the data URI format
+    return `data:image/jpeg;base64,${base64Image}`;
+  } catch (error) {
+    console.error('Error generating cover image with free alternative:', error);
+    throw error;
+  }
+};
+
 module.exports = {
   generateOutline,
   regenerateSingleChapter,
-  generateChapterStream
+  generateChapterStream,
+  generateCoverImage
 };
