@@ -46,6 +46,56 @@ const createBook = catchAsync(async (req, res) => {
   });
 });
 
+const updateBook = catchAsync(async (req, res) => {
+  const { bookId } = req.params;
+  const { metadata, chapters } = req.body;
+
+  // 1. Update the book document
+  const book = await Book.findOneAndUpdate(
+    { _id: bookId, user: req.user._id },
+    {
+      title: metadata.title,
+      subtitle: metadata.subtitle,
+      author: metadata.author,
+      description: metadata.description,
+      coverImage: metadata.coverImage,
+      genre: metadata.genre,
+      tone: metadata.tone,
+      topic: metadata.topic
+    },
+    { new: true }
+  );
+
+  if (!book) {
+    return res.status(404).json({ success: false, error: 'Book not found' });
+  }
+
+  // 2. Update chapters
+  // For simplicity, we assume chapters are just updated. We update by _id.
+  if (chapters && chapters.length > 0) {
+    const bulkOps = chapters.map((ch, index) => ({
+      updateOne: {
+        filter: { _id: ch._id, book: book._id },
+        update: {
+          $set: {
+            title: ch.title,
+            summary: ch.summary,
+            content: ch.content || '',
+            estimatedWords: ch.estimatedWords,
+            order: ch.order !== undefined ? ch.order : index
+          }
+        }
+      }
+    }));
+    await Chapter.bulkWrite(bulkOps);
+  }
+
+  res.status(200).json({
+    success: true,
+    data: { book }
+  });
+});
+
 const autosaveChapter = async (req, res, next) => {
   try {
     const { chapterId } = req.params;
@@ -122,6 +172,7 @@ const reorderChapters = catchAsync(async (req, res, next) => {
 
 module.exports = {
   createBook,
+  updateBook,
   autosaveChapter,
   getBooks,
   reorderChapters

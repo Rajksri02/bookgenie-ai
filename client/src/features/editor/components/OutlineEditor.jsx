@@ -42,12 +42,12 @@ const OutlineEditor = ({ initialOutline, onStartOver, bookContext }) => {
     getInitialState('metadata', {
       title: initialOutline.book?.title || initialOutline.title || '',
       subtitle: initialOutline.book?.subtitle || initialOutline.subtitle || '',
-      author: initialOutline.book?.author || '',
-      genre: initialOutline.book?.genre || bookContext?.genre || '',
-      description: initialOutline.book?.description || '',
-      coverImage: initialOutline.book?.coverImage || '',
-      tone: bookContext?.tone || 'Professional',
-      topic: bookContext?.topic || ''
+      author: initialOutline.book?.author || initialOutline.author || '',
+      genre: initialOutline.book?.genre || initialOutline.genre || bookContext?.genre || '',
+      description: initialOutline.book?.description || initialOutline.description || '',
+      coverImage: initialOutline.book?.coverImage || initialOutline.coverImage || '',
+      tone: bookContext?.tone || initialOutline.tone || 'Professional',
+      topic: bookContext?.topic || initialOutline.topic || ''
     })
   );
   
@@ -119,11 +119,19 @@ const OutlineEditor = ({ initialOutline, onStartOver, bookContext }) => {
     }
     try {
       setIsSaving(true);
-      const res = await bookApi.createBook(metadata, chapters);
+      const existingBookId = initialOutline._id || bookContext?._id;
+      let res;
+      
+      if (existingBookId) {
+        res = await bookApi.updateBook(existingBookId, metadata, chapters);
+      } else {
+        res = await bookApi.createBook(metadata, chapters);
+      }
+
       if (res.success) {
         // Clear draft
         localStorage.removeItem(DRAFT_KEY);
-        alert("Book successfully saved to the database!");
+        alert(existingBookId ? "Book successfully updated!" : "Book successfully saved to the database!");
         // Refresh page to trigger dashboard load
         window.location.reload();
       }
@@ -183,7 +191,7 @@ const OutlineEditor = ({ initialOutline, onStartOver, bookContext }) => {
             disabled={isSaving}
             className="px-6 py-2 bg-green-600 text-white font-medium rounded-md hover:bg-green-700 transition-colors shadow-sm disabled:opacity-50"
           >
-            {isSaving ? 'Saving...' : 'Create Book'}
+            {isSaving ? 'Saving...' : (initialOutline._id || bookContext?._id) ? 'Save Changes' : 'Create Book'}
           </button>
         </div>
       </div>

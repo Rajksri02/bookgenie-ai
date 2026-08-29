@@ -11,6 +11,11 @@ export const bookApi = {
     return response;
   },
 
+  updateBook: async (bookId, metadata, chapters) => {
+    const response = await apiClient.put(`/books/${bookId}`, { metadata, chapters });
+    return response;
+  },
+
   /**
    * Autosave a chapter's content
    * @param {string} chapterId 
