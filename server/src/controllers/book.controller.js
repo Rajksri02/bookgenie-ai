@@ -2,6 +2,50 @@ const Book = require('../models/Book.model');
 const Chapter = require('../models/Chapter.model');
 const catchAsync = require('../utils/catchAsync');
 
+const createBook = catchAsync(async (req, res) => {
+  const { metadata, chapters } = req.body;
+
+  if (!metadata || !metadata.title) {
+    return res.status(400).json({ success: false, error: 'Book metadata with title is required' });
+  }
+
+  // 1. Create the book document
+  const book = await Book.create({
+    user: req.user._id,
+    title: metadata.title,
+    subtitle: metadata.subtitle,
+    author: metadata.author,
+    description: metadata.description,
+    coverImage: metadata.coverImage,
+    genre: metadata.genre,
+    tone: metadata.tone,
+    topic: metadata.topic
+  });
+
+  // 2. Create the chapters
+  let savedChapters = [];
+  if (chapters && chapters.length > 0) {
+    const chaptersToInsert = chapters.map((ch, index) => ({
+      book: book._id,
+      order: ch.order !== undefined ? ch.order : index,
+      title: ch.title,
+      summary: ch.summary,
+      content: ch.content || '',
+      estimatedWords: ch.estimatedWords,
+      status: ch.status || 'draft'
+    }));
+    savedChapters = await Chapter.insertMany(chaptersToInsert);
+  }
+
+  res.status(201).json({
+    success: true,
+    data: {
+      book,
+      chapters: savedChapters
+    }
+  });
+});
+
 const autosaveChapter = async (req, res, next) => {
   try {
     const { chapterId } = req.params;
@@ -50,7 +94,35 @@ const getBooks = catchAsync(async (req, res) => {
   });
 });
 
+const reorderChapters = catchAsync(async (req, res, next) => {
+  const { bookId } = req.params;
+  const { chapterIds } = req.body;
+
+  if (!chapterIds || !Array.isArray(chapterIds)) {
+    return res.status(400).json({ success: false, error: 'chapterIds array is required' });
+  }
+
+  // Update order for each chapter
+  const bulkOps = chapterIds.map((id, index) => ({
+    updateOne: {
+      filter: { _id: id, book: bookId },
+      update: { $set: { order: index } }
+    }
+  }));
+
+  if (bulkOps.length > 0) {
+    await Chapter.bulkWrite(bulkOps);
+  }
+
+  res.status(200).json({
+    success: true,
+    message: 'Chapters reordered successfully'
+  });
+});
+
 module.exports = {
+  createBook,
   autosaveChapter,
-  getBooks
+  getBooks,
+  reorderChapters
 };

@@ -16,6 +16,18 @@ const bookSchema = new mongoose.Schema(
       type: String,
       trim: true,
     },
+    author: {
+      type: String,
+      trim: true,
+    },
+    description: {
+      type: String,
+      trim: true,
+    },
+    coverImage: {
+      type: String, // Cloudinary URL
+      trim: true,
+    },
     topic: {
       type: String,
       trim: true,
