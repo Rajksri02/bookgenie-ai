@@ -1,0 +1,191 @@
+import React, { useState } from 'react';
+import imageCompression from 'browser-image-compression';
+import { bookApi } from '../api/bookApi';
+import { ImagePlus, Sparkles, Loader2 } from 'lucide-react';
+
+const BookMetadataForm = ({ metadata, setMetadata, initialBookContext = {} }) => {
+  const [isUploading, setIsUploading] = useState(false);
+  const [isGenerating, setIsGenerating] = useState(false);
+
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+    setMetadata(prev => ({ ...prev, [name]: value }));
+  };
+
+  const handleImageUpload = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    try {
+      setIsUploading(true);
+      
+      const options = {
+        maxSizeMB: 1,
+        maxWidthOrHeight: 1200,
+        useWebWorker: true,
+      };
+      
+      const compressedFile = await imageCompression(file, options);
+      
+      const response = await bookApi.uploadCoverImage(compressedFile);
+      if (response.success) {
+        setMetadata(prev => ({ ...prev, coverImage: response.url }));
+      }
+    } catch (error) {
+      console.error('Error uploading image:', error);
+      alert('Failed to upload image. Make sure Cloudinary is configured in the backend.');
+    } finally {
+      setIsUploading(false);
+    }
+  };
+
+  const handleGenerateCover = async () => {
+    if (!metadata.title) {
+      alert("Please provide a book title first.");
+      return;
+    }
+    
+    try {
+      setIsGenerating(true);
+      const response = await bookApi.generateCoverImage({
+        title: metadata.title,
+        subtitle: metadata.subtitle || '',
+        description: metadata.description || '',
+        genre: metadata.genre || initialBookContext.genre || 'General Fiction',
+        tone: initialBookContext.tone || 'Professional',
+      });
+      
+      if (response.success) {
+        setMetadata(prev => ({ ...prev, coverImage: response.url }));
+      }
+    } catch (error) {
+      console.error('Error generating cover:', error);
+      alert('Failed to generate cover. Check server logs.');
+    } finally {
+      setIsGenerating(false);
+    }
+  };
+
+  return (
+    <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 mb-8 flex flex-col md:flex-row gap-8">
+      
+      {/* Form Fields */}
+      <div className="flex-1 space-y-4">
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">Book Title *</label>
+          <input 
+            type="text" 
+            name="title"
+            value={metadata.title || ''} 
+            onChange={handleChange}
+            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            placeholder="Enter book title"
+          />
+        </div>
+        
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">Subtitle</label>
+          <input 
+            type="text" 
+            name="subtitle"
+            value={metadata.subtitle || ''} 
+            onChange={handleChange}
+            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            placeholder="Enter subtitle (optional)"
+          />
+        </div>
+
+        <div className="grid grid-cols-2 gap-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Author</label>
+            <input 
+              type="text" 
+              name="author"
+              value={metadata.author || ''} 
+              onChange={handleChange}
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              placeholder="Author name"
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Genre</label>
+            <input 
+              type="text" 
+              name="genre"
+              value={metadata.genre || ''} 
+              onChange={handleChange}
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              placeholder="e.g. Science Fiction"
+            />
+          </div>
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">Description</label>
+          <textarea 
+            name="description"
+            value={metadata.description || ''} 
+            onChange={handleChange}
+            rows={3}
+            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            placeholder="Brief book synopsis or description"
+          />
+        </div>
+      </div>
+
+      {/* Cover Image Section */}
+      <div className="w-full md:w-64 flex flex-col gap-4 shrink-0">
+        <label className="block text-sm font-medium text-gray-700 mb-1">Cover Image (2:3 Ratio)</label>
+        
+        <div className="relative aspect-[2/3] w-full bg-gray-50 border-2 border-dashed border-gray-300 rounded-xl overflow-hidden flex items-center justify-center group">
+          {metadata.coverImage ? (
+            <img 
+              src={metadata.coverImage} 
+              alt="Book Cover" 
+              className="w-full h-full object-cover"
+            />
+          ) : (
+            <div className="text-center p-4 text-gray-400">
+              <ImagePlus className="w-8 h-8 mx-auto mb-2 opacity-50" />
+              <span className="text-xs">No cover selected</span>
+            </div>
+          )}
+
+          {/* Upload Overlay */}
+          <label className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer flex items-center justify-center text-white">
+            <span className="text-sm font-medium">Upload Image</span>
+            <input 
+              type="file" 
+              accept="image/*" 
+              className="hidden" 
+              onChange={handleImageUpload}
+              disabled={isUploading || isGenerating}
+            />
+          </label>
+          
+          {(isUploading || isGenerating) && (
+            <div className="absolute inset-0 bg-white/80 flex flex-col items-center justify-center">
+              <Loader2 className="w-8 h-8 text-blue-600 animate-spin mb-2" />
+              <span className="text-sm font-medium text-gray-700">
+                {isGenerating ? 'AI Generating...' : 'Uploading...'}
+              </span>
+            </div>
+          )}
+        </div>
+
+        <button
+          type="button"
+          onClick={handleGenerateCover}
+          disabled={isUploading || isGenerating || !metadata.title}
+          className="w-full py-2 px-4 bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white rounded-lg flex items-center justify-center gap-2 font-medium transition-all shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
+        >
+          <Sparkles className="w-4 h-4" />
+          AI Generate Cover
+        </button>
+      </div>
+      
+    </div>
+  );
+};
+
+export default BookMetadataForm;
