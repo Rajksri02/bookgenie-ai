@@ -65,16 +65,7 @@ const OutlineGenerator = ({ onGenerate }) => {
     }
   };
 
-  // If we already generated an outline, show the editor instead of the form
-  if (outline) {
-    return (
-      <OutlineEditor 
-        initialOutline={outline} 
-        onStartOver={() => setOutline(null)}
-        bookContext={formData}
-      />
-    );
-  }
+  // Outline generation is handled by the parent component navigating away on success.
 
   return (
     <div className="max-w-2xl mx-auto bg-white rounded-xl shadow-sm border border-slate-100 p-8">
