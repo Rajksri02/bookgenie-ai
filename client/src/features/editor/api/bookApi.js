@@ -16,6 +16,11 @@ export const bookApi = {
     return response;
   },
 
+  deleteBook: async (bookId) => {
+    const response = await apiClient.delete(`/books/${bookId}`);
+    return response;
+  },
+
   /**
    * Autosave a chapter's content
    * @param {string} chapterId 

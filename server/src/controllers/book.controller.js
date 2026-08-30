@@ -170,10 +170,34 @@ const reorderChapters = catchAsync(async (req, res, next) => {
   });
 });
 
+
+
+const deleteBook = catchAsync(async (req, res, next) => {
+  const { bookId } = req.params;
+  
+  const book = await Book.findOne({ _id: bookId, user: req.user._id });
+  
+  if (!book) {
+    return res.status(404).json({ success: false, error: 'Book not found' });
+  }
+
+  // Cascade delete chapters
+  await Chapter.deleteMany({ book: bookId });
+  
+  // Delete book
+  await book.deleteOne();
+  
+  res.status(200).json({
+    success: true,
+    data: {}
+  });
+});
+
 module.exports = {
   createBook,
   updateBook,
   autosaveChapter,
   getBooks,
-  reorderChapters
+  reorderChapters,
+  deleteBook
 };
