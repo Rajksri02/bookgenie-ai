@@ -41,7 +41,7 @@ const Register = () => {
     setIsSubmitting(true);
     try {
       await register(formData);
-      navigate('/dashboard');
+      navigate('/dashboard', { replace: true });
     } catch (err) {
       if (err.error?.details && err.error.details.length > 0) {
         setError(err.error.details[0].message);

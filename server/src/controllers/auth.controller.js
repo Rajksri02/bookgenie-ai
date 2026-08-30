@@ -150,7 +150,11 @@ const getMe = catchAsync(async (req, res) => {
  * @access  Public
  */
 const logout = catchAsync(async (req, res) => {
-  res.clearCookie('refreshToken');
+  res.clearCookie('refreshToken', {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === 'production',
+    sameSite: 'strict',
+  });
   res.status(200).json({
     success: true,
     data: {},
