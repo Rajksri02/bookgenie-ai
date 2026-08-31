@@ -251,6 +251,54 @@ const getExportJobStatus = catchAsync(async (req, res, next) => {
   });
 });
 
+const duplicateBook = catchAsync(async (req, res, next) => {
+  const { bookId } = req.params;
+  
+  const originalBook = await Book.findOne({ _id: bookId, user: req.user._id });
+  
+  if (!originalBook) {
+    return res.status(404).json({ success: false, error: 'Book not found' });
+  }
+
+  // Create duplicate book
+  const newBook = await Book.create({
+    user: req.user._id,
+    title: `Copy of ${originalBook.title}`,
+    subtitle: originalBook.subtitle,
+    author: originalBook.author,
+    description: originalBook.description,
+    coverImage: originalBook.coverImage,
+    genre: originalBook.genre,
+    tone: originalBook.tone,
+    topic: originalBook.topic
+  });
+
+  // Duplicate chapters
+  const originalChapters = await Chapter.find({ book: bookId }).sort({ order: 1 });
+  
+  let savedChapters = [];
+  if (originalChapters.length > 0) {
+    const chaptersToInsert = originalChapters.map(ch => ({
+      book: newBook._id,
+      order: ch.order,
+      title: ch.title,
+      summary: ch.summary,
+      content: ch.content,
+      estimatedWords: ch.estimatedWords,
+      status: ch.status
+    }));
+    savedChapters = await Chapter.insertMany(chaptersToInsert);
+  }
+
+  const bookWithChapters = newBook.toObject();
+  bookWithChapters.chapters = savedChapters;
+
+  res.status(201).json({
+    success: true,
+    data: bookWithChapters
+  });
+});
+
 module.exports = {
   createBook,
   updateBook,
@@ -259,5 +307,6 @@ module.exports = {
   reorderChapters,
   deleteBook,
   exportBook,
-  getExportJobStatus
+  getExportJobStatus,
+  duplicateBook
 };

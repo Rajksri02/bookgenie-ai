@@ -21,6 +21,11 @@ export const bookApi = {
     return response;
   },
 
+  duplicateBook: async (bookId) => {
+    const response = await apiClient.post(`/books/${bookId}/duplicate`);
+    return response;
+  },
+
   /**
    * Autosave a chapter's content
    * @param {string} chapterId 
