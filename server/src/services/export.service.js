@@ -24,18 +24,15 @@ const generatePDF = async (book, chapters, jobId) => {
       <head>
         <meta charset="UTF-8">
         <style>
-          body { font-family: 'Georgia', serif; line-height: 1.6; color: #333; margin: 0; padding: 0; }
-          .cover-page { height: 100vh; display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center; page-break-after: always; }
-          .cover-title { font-size: 3em; margin-bottom: 0.2em; }
-          .cover-subtitle { font-size: 1.5em; color: #666; margin-bottom: 2em; }
-          .cover-author { font-size: 1.2em; font-style: italic; }
-          .toc { page-break-after: always; }
-          .toc h1 { text-align: center; }
-          .toc-item { display: flex; justify-content: space-between; margin-bottom: 0.5em; }
-          .chapter { page-break-before: always; }
-          .chapter-title { text-align: center; font-size: 2.5em; margin-bottom: 1em; padding-top: 2em;}
-          h1, h2, h3 { color: #111; }
-          p { margin-bottom: 1em; text-indent: 1.5em; }
+          body { font-family: 'Georgia', serif; line-height: 1.8; color: #222; margin: 0; padding: 0; text-align: justify; }
+          .cover-page { height: 100vh; display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center; }
+          .cover-title { font-size: 3.5em; margin-bottom: 0.2em; }
+          .cover-subtitle { font-size: 1.8em; color: #555; margin-bottom: 2em; }
+          .cover-author { font-size: 1.4em; font-style: italic; }
+          .chapter { page-break-before: always; break-before: page; }
+          .chapter-title { text-align: center; font-size: 2.5em; margin-bottom: 1.5em; padding-top: 1em; padding-bottom: 0.5em; border-bottom: 1px solid #ddd; }
+          h1, h2, h3 { color: #111; text-align: left; margin-top: 1.5em; }
+          p { margin-bottom: 1.2em; text-indent: 2em; }
         </style>
       </head>
       <body>
@@ -48,9 +45,9 @@ const generatePDF = async (book, chapters, jobId) => {
 
         <!-- Chapters -->
         ${chapters.map((ch) => {
-          let content = ch.content || '';
-          // Strip leading markdown H1 if it matches the chapter title or is the first line
-          content = content.replace(/^#\s+[^\n]+\n+/, '');
+          let content = ch.content || ch.summary || '*No content generated yet for this chapter.*';
+          // Strip leading markdown H1/H2/H3 if it's just repeating the title
+          content = content.trim().replace(/^(#+)\s+[^\n]+\n*/, '');
           return `
           <div class="chapter">
             <h1 class="chapter-title">${ch.title}</h1>
@@ -104,6 +101,25 @@ const generatePDF = async (book, chapters, jobId) => {
 };
 
 /**
+ * Helper to parse inline markdown tokens to docx TextRuns
+ */
+const parseInlineTokensToRuns = (tokens, activeStyle = {}) => {
+  let runs = [];
+  tokens.forEach(token => {
+    const style = { ...activeStyle };
+    if (token.type === 'strong') style.bold = true;
+    if (token.type === 'em') style.italics = true;
+    
+    if (token.tokens && token.tokens.length > 0) {
+      runs.push(...parseInlineTokensToRuns(token.tokens, style));
+    } else {
+      runs.push(new docx.TextRun({ text: token.text || token.raw || '', ...style }));
+    }
+  });
+  return runs;
+};
+
+/**
  * Helper to parse markdown into docx elements
  */
 const parseMarkdownToDocx = (markdownStr) => {
@@ -120,21 +136,19 @@ const parseMarkdownToDocx = (markdownStr) => {
         })
       );
     } else if (token.type === 'paragraph') {
-      // Basic inline parsing for bold/italic (simplified)
-      // A robust implementation would use marked inline lexer here.
-      // For simplicity in this demo, we treat paragraph as plain text if it lacks markdown formatting,
-      // or we can just pass raw text. We'll just pass raw text for demo purposes to avoid complex AST traversal.
+      const runs = token.tokens ? parseInlineTokensToRuns(token.tokens) : [new docx.TextRun(token.text)];
       elements.push(
         new docx.Paragraph({
-          text: token.text,
+          children: runs,
           spacing: { after: 120 }
         })
       );
     } else if (token.type === 'list') {
       token.items.forEach(item => {
+        const runs = item.tokens ? parseInlineTokensToRuns(item.tokens) : [new docx.TextRun(item.text)];
         elements.push(
           new docx.Paragraph({
-            text: item.text,
+            children: runs,
             bullet: { level: 0 },
             spacing: { after: 60 }
           })
@@ -168,8 +182,9 @@ const generateDOCX = async (book, chapters, jobId) => {
     // Cover Page
     docChildren.push(
       new docx.Paragraph({
-        text: book.title,
-        heading: docx.HeadingLevel.TITLE,
+        children: [
+          new docx.TextRun({ text: book.title || 'Untitled', size: 56, bold: true })
+        ],
         alignment: docx.AlignmentType.CENTER,
         spacing: { before: 4000, after: 400 }
       })
@@ -177,8 +192,9 @@ const generateDOCX = async (book, chapters, jobId) => {
     if (book.subtitle) {
       docChildren.push(
         new docx.Paragraph({
-          text: book.subtitle,
-          heading: docx.HeadingLevel.HEADING_2,
+          children: [
+            new docx.TextRun({ text: book.subtitle, size: 36, color: '555555' })
+          ],
           alignment: docx.AlignmentType.CENTER,
           spacing: { after: 2000 }
         })
@@ -186,7 +202,9 @@ const generateDOCX = async (book, chapters, jobId) => {
     }
     docChildren.push(
       new docx.Paragraph({
-        text: `By ${book.author || 'Unknown Author'}`,
+        children: [
+          new docx.TextRun({ text: `By ${book.author || 'Unknown Author'}`, size: 28, italics: true })
+        ],
         alignment: docx.AlignmentType.CENTER,
         pageBreakBefore: false
       })
@@ -194,21 +212,6 @@ const generateDOCX = async (book, chapters, jobId) => {
     
     // Page break after cover
     docChildren.push(new docx.Paragraph({ pageBreakBefore: true }));
-
-    // Table of Contents
-    docChildren.push(
-      new docx.Paragraph({
-        text: "Table of Contents",
-        heading: docx.HeadingLevel.HEADING_1,
-        spacing: { after: 200 }
-      })
-    );
-    docChildren.push(
-      new docx.TableOfContents("Summary", {
-        hyperlink: true,
-        headingStyleRange: "1-3",
-      })
-    );
 
     // Chapters
     chapters.forEach((ch) => {
@@ -223,8 +226,10 @@ const generateDOCX = async (book, chapters, jobId) => {
       );
 
       // Parse markdown to docx paragraphs
-      if (ch.content) {
-        const elements = parseMarkdownToDocx(ch.content);
+      let content = ch.content || ch.summary || '*No content generated yet for this chapter.*';
+      content = content.trim().replace(/^(#+)\s+[^\n]+\n*/, '');
+      if (content) {
+        const elements = parseMarkdownToDocx(content);
         docChildren.push(...elements);
       }
     });
