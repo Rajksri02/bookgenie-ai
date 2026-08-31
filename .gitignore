@@ -32,3 +32,13 @@ dist-ssr
 
 # Temporary/Scratch files
 scratch/
+
+# Backend Test & Debug Scripts
+server/check_*.js
+server/export_*.js
+server/fix_*.js
+server/generate_*.js
+server/test_*.js
+server/test-*.js
+server/wipe_*.js
+server/inspect-*.js
