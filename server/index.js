@@ -32,11 +32,16 @@ app.use(
   })
 );
 
+const path = require('path');
+
 // Mount routers
 app.use('/api/auth', authRoutes);
 app.use('/api/ai', aiRoutes);
 app.use('/api/books', bookRoutes);
 app.use('/api/images', imageRoutes);
+
+// Serve static uploads
+app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
 // Base route for health check
 app.get('/', (req, res) => {

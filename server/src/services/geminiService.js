@@ -1,10 +1,43 @@
 const { GoogleGenAI } = require('@google/genai');
 
-const getAiClient = () => {
-  if (!process.env.GEMINI_API_KEY) {
-    throw new Error('GEMINI_API_KEY is missing from environment variables.');
+const getApiKeys = () => {
+  const keysString = process.env.GEMINI_API_KEYS || process.env.GEMINI_API_KEY;
+  if (!keysString) {
+    throw new Error('GEMINI_API_KEY or GEMINI_API_KEYS is missing from environment variables.');
   }
-  return new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
+  return keysString.split(',').map(k => k.trim()).filter(k => k.length > 0);
+};
+
+const executeWithFallback = async (operationName, executeFn) => {
+  const keys = getApiKeys();
+  let lastError;
+
+  for (let i = 0; i < keys.length; i++) {
+    const key = keys[i];
+    const client = new GoogleGenAI({ apiKey: key });
+    
+    try {
+      return await executeFn(client);
+    } catch (error) {
+      lastError = error;
+      const isRateLimit = error.status === 429 || 
+                          (error.message && (error.message.includes('429') || error.message.includes('Quota')));
+      
+      if (isRateLimit) {
+        console.warn(`[Gemini API] Key ${i+1}/${keys.length} hit rate limit during ${operationName}.`);
+        if (i < keys.length - 1) {
+          console.log(`[Gemini API] Falling back to key ${i+2}...`);
+          continue;
+        } else {
+          console.error(`[Gemini API] All ${keys.length} keys exhausted.`);
+          throw error;
+        }
+      } else {
+        throw error;
+      }
+    }
+  }
+  throw lastError;
 };
 
 // Strips markdown json blocks if the model hallucinates them despite structured output mode
@@ -50,22 +83,23 @@ const chapterSchema = {
  * Executes an AI call with automatic retry on JSON parsing failures.
  */
 const executeWithRetry = async (prompt, schema, retryCount = 1) => {
-  const client = getAiClient();
   let attempt = 0;
   
   while (attempt <= retryCount) {
     try {
-      const response = await client.models.generateContent({
-        model: "gemini-3.6-flash",
-        contents: prompt,
-        config: {
-          responseMimeType: 'application/json',
-          responseSchema: schema
-        }
+      const responseText = await executeWithFallback('executeWithRetry', async (client) => {
+        const response = await client.models.generateContent({
+          model: "gemini-3.6-flash",
+          contents: prompt,
+          config: {
+            responseMimeType: 'application/json',
+            responseSchema: schema
+          }
+        });
+        return response.text;
       });
 
-      const rawOutput = response.text;
-      const strippedOutput = stripMarkdownFences(rawOutput);
+      const strippedOutput = stripMarkdownFences(responseText);
       
       // Attempt to parse to verify it's valid JSON matching the schema conceptually
       return JSON.parse(strippedOutput);
@@ -131,7 +165,6 @@ const generateChapterStream = async ({
   tone,
   selectedText = '' // used for expand_text and rewrite_tone
 }) => {
-  const client = getAiClient();
   let prompt = '';
 
   if (mode === 'full_draft') {
@@ -179,9 +212,11 @@ Return ONLY the rewritten text in Markdown. Keep the length roughly similar.`;
     throw new Error('Invalid generation mode');
   }
 
-  const responseStream = await client.models.generateContentStream({
-    model: 'gemini-3.6-flash',
-    contents: prompt
+  const responseStream = await executeWithFallback('generateChapterStream', async (client) => {
+    return await client.models.generateContentStream({
+      model: 'gemini-3.6-flash',
+      contents: prompt
+    });
   });
 
   return responseStream;
@@ -189,8 +224,6 @@ Return ONLY the rewritten text in Markdown. Keep the length roughly similar.`;
 
 const generateCoverImage = async ({ title, subtitle, description, genre, tone }) => {
   console.log(`Generating cover for: "${title}" using Gemini Text + Pollinations AI...`);
-  
-  const client = getAiClient();
   
   // 1. Use free Gemini Text to generate a highly detailed visual prompt
   const textPrompt = `You are an expert book cover designer. I am writing a book.
@@ -206,11 +239,14 @@ Do NOT include the book title text in the prompt, just the art. Make it cinemati
 
   let visualPrompt = '';
   try {
-    const response = await client.models.generateContent({
-      model: "gemini-3.6-flash",
-      contents: textPrompt
+    const responseText = await executeWithFallback('generateCoverImagePrompt', async (client) => {
+      const response = await client.models.generateContent({
+        model: "gemini-3.6-flash",
+        contents: textPrompt
+      });
+      return response.text;
     });
-    visualPrompt = response.text.trim();
+    visualPrompt = responseText.trim();
     console.log("Gemini generated visual prompt:", visualPrompt);
   } catch (error) {
     console.error("Failed to generate visual prompt with Gemini, falling back to basic prompt.", error);

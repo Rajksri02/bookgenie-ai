@@ -190,7 +190,8 @@ const DashboardNew = () => {
           &larr; Back to Dashboard
         </Link>
         <OutlineGenerator onGenerate={(newBook) => {
-          navigate('/dashboard/edit/new', { state: { bookContext: newBook } });
+          const bookId = newBook._id || newBook.book?._id || 'new';
+          navigate(`/dashboard/edit/${bookId}`, { state: { bookContext: newBook } });
         }} />
       </div>
     </div>
@@ -205,20 +206,14 @@ const DashboardEdit = () => {
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    if (bookId === 'new') {
-      const handleNew = () => {
-        // Try getting from navigation state first
-        if (location.state?.bookContext) {
-          setBook({
-            ...location.state.bookContext.book,
-            chapters: location.state.bookContext.chapters
-          });
-          setIsLoading(false);
-          return;
-        }
-        
-        // Fallback: check localStorage
-        const draft = localStorage.getItem('bookgenie_draft');
+    const handleLoad = async () => {
+      // Removed location.state fast-path because history state survives reloads 
+      // and overwrites newer database changes (e.g. AI Cover Images, chapter content)
+
+
+      if (bookId === 'new') {
+        // Fallback: check localStorage for a generic draft
+        const draft = localStorage.getItem('bookgenie_draft_new');
         if (draft) {
           const parsed = JSON.parse(draft);
           setBook({
@@ -230,24 +225,25 @@ const DashboardEdit = () => {
           // No state and no draft, send back to generator
           navigate('/dashboard/new', { replace: true });
         }
-      };
-      
-      handleNew();
-    } else {
-      // Fetch existing book from API
-      bookApi.getBooks().then(res => {
-        const found = (res.data || []).find(b => b._id === bookId);
-        if (found) {
-          setBook(found);
-        } else {
+      } else {
+        // Fetch existing book from API
+        try {
+          const res = await bookApi.getBooks();
+          const found = (res.data || []).find(b => b._id === bookId);
+          if (found) {
+            setBook(found);
+          } else {
+            navigate('/dashboard', { replace: true });
+          }
+        } catch (err) {
           navigate('/dashboard', { replace: true });
         }
         setIsLoading(false);
-      }).catch(() => {
-        navigate('/dashboard', { replace: true });
-      });
-    }
-  }, [bookId, navigate, location.state]);
+      }
+    };
+    
+    handleLoad();
+  }, [bookId, navigate]);
 
   if (isLoading) return <div className="min-h-screen p-8 bg-slate-50 flex justify-center"><div className="animate-pulse">Loading...</div></div>;
   if (!book) return null; // Prevent crash while navigating away

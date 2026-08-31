@@ -1,7 +1,8 @@
 const Book = require('../models/Book.model');
 const Chapter = require('../models/Chapter.model');
+const ExportJob = require('../models/ExportJob.model');
 const catchAsync = require('../utils/catchAsync');
-
+const exportService = require('../services/export.service');
 const createBook = catchAsync(async (req, res) => {
   const { metadata, chapters } = req.body;
 
@@ -193,11 +194,70 @@ const deleteBook = catchAsync(async (req, res, next) => {
   });
 });
 
+const exportBook = catchAsync(async (req, res, next) => {
+  const { bookId } = req.params;
+  const { format } = req.body;
+
+  if (!['pdf', 'docx'].includes(format)) {
+    return res.status(400).json({ success: false, error: 'Invalid export format' });
+  }
+
+  const book = await Book.findOne({ _id: bookId, user: req.user._id });
+  if (!book) {
+    return res.status(404).json({ success: false, error: 'Book not found' });
+  }
+
+  const chapters = await Chapter.find({ book: bookId }).sort({ order: 1 }).lean();
+
+  const exportJob = await ExportJob.create({
+    bookId,
+    userId: req.user._id,
+    format,
+    status: 'pending'
+  });
+
+  // Run in background without awaiting
+  if (format === 'pdf') {
+    exportService.generatePDF(book, chapters, exportJob._id);
+  } else if (format === 'docx') {
+    exportService.generateDOCX(book, chapters, exportJob._id);
+  }
+
+  res.status(202).json({
+    success: true,
+    data: {
+      jobId: exportJob._id,
+      status: exportJob.status
+    }
+  });
+});
+
+const getExportJobStatus = catchAsync(async (req, res, next) => {
+  const { jobId } = req.params;
+  
+  const job = await ExportJob.findOne({ _id: jobId, userId: req.user._id });
+  if (!job) {
+    return res.status(404).json({ success: false, error: 'Export job not found' });
+  }
+
+  res.status(200).json({
+    success: true,
+    data: {
+      jobId: job._id,
+      status: job.status,
+      fileUrl: job.fileUrl,
+      error: job.error
+    }
+  });
+});
+
 module.exports = {
   createBook,
   updateBook,
   autosaveChapter,
   getBooks,
   reorderChapters,
-  deleteBook
+  deleteBook,
+  exportBook,
+  getExportJobStatus
 };

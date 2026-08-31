@@ -5,13 +5,18 @@ import { bookApi } from '../api/bookApi';
 import { RefreshCw, Play, Settings2, CheckCircle2, Save } from 'lucide-react';
 import toast from 'react-hot-toast';
 
-const ChapterGenerator = ({ chapter, bookContext, previousChapter, nextChapter }) => {
-  const [content, setContent] = useState('');
+const ChapterGenerator = ({ chapter, bookContext, previousChapter, nextChapter, onUpdateContent }) => {
+  const [content, setContent] = useState(chapter.content || '');
   const [isGenerating, setIsGenerating] = useState(false);
   const [mode, setMode] = useState('full_draft');
   const [targetWords, setTargetWords] = useState(1000);
   const [selectedText, setSelectedText] = useState('');
   const [generationsRemaining, setGenerationsRemaining] = useState(null);
+
+  // Sync state if chapter changes (e.g. user navigates between chapters without remounting)
+  useEffect(() => {
+    setContent(chapter.content || '');
+  }, [chapter._id]);
   
   const textareaRef = useRef(null);
 
@@ -40,6 +45,9 @@ const ChapterGenerator = ({ chapter, bookContext, previousChapter, nextChapter }
       setSaveStatus('saving');
       try {
         await bookApi.autosaveChapter(chapter._id || 'temp', content);
+        if (onUpdateContent) {
+          onUpdateContent(content);
+        }
         setSaveStatus('saved');
       } catch (error) {
         console.error('Autosave failed:', error);

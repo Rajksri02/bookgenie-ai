@@ -56,5 +56,15 @@ export const bookApi = {
     // metadata: { title, genre, tone }
     const response = await apiClient.post('/images/generate', metadata);
     return response;
+  },
+
+  exportBook: async (bookId, format) => {
+    const response = await apiClient.post(`/books/${bookId}/export`, { format });
+    return response;
+  },
+
+  getExportJobStatus: async (jobId) => {
+    const response = await apiClient.get(`/books/export-job/${jobId}`);
+    return response;
   }
 };
