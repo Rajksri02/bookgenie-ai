@@ -46,6 +46,15 @@ export const bookApi = {
     return response;
   },
 
+  /**
+   * Reorder books
+   * @param {string[]} bookIds 
+   */
+  reorderBooks: async (bookIds) => {
+    const response = await apiClient.put(`/books/reorder`, { bookIds });
+    return response;
+  },
+
   uploadCoverImage: async (file) => {
     const formData = new FormData();
     formData.append('image', file);
