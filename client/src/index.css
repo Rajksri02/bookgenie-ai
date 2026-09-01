@@ -32,6 +32,8 @@
   --radius-xl: 1rem;
 }
 
+@custom-variant dark (&:where(.dark, .dark *));
+
 @layer base {
   body {
     @apply antialiased text-slate-900 bg-slate-50 selection:bg-primary-200 selection:text-primary-900;
