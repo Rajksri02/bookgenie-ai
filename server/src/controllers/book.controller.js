@@ -132,7 +132,7 @@ const autosaveChapter = async (req, res, next) => {
 };
 
 const getBooks = catchAsync(async (req, res) => {
-  const books = await Book.find({ user: req.user._id }).sort({ createdAt: -1 }).lean();
+  const books = await Book.find({ user: req.user._id }).sort({ order: 1, createdAt: -1 }).lean();
   
   for (let i = 0; i < books.length; i++) {
     const chapters = await Chapter.find({ book: books[i]._id }).sort({ order: 1 }).lean();
@@ -168,6 +168,30 @@ const reorderChapters = catchAsync(async (req, res, next) => {
   res.status(200).json({
     success: true,
     message: 'Chapters reordered successfully'
+  });
+});
+
+const reorderBooks = catchAsync(async (req, res, next) => {
+  const { bookIds } = req.body;
+
+  if (!bookIds || !Array.isArray(bookIds)) {
+    return res.status(400).json({ success: false, error: 'bookIds array is required' });
+  }
+
+  const bulkOps = bookIds.map((id, index) => ({
+    updateOne: {
+      filter: { _id: id, user: req.user._id },
+      update: { $set: { order: index } }
+    }
+  }));
+
+  if (bulkOps.length > 0) {
+    await Book.bulkWrite(bulkOps);
+  }
+
+  res.status(200).json({
+    success: true,
+    message: 'Books reordered successfully'
   });
 });
 
@@ -305,6 +329,7 @@ module.exports = {
   autosaveChapter,
   getBooks,
   reorderChapters,
+  reorderBooks,
   deleteBook,
   exportBook,
   getExportJobStatus,

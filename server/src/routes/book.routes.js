@@ -1,10 +1,11 @@
 const express = require('express');
 const router = express.Router();
-const { createBook, updateBook, autosaveChapter, getBooks, reorderChapters, deleteBook, exportBook, getExportJobStatus, duplicateBook } = require('../controllers/book.controller');
+const { createBook, updateBook, autosaveChapter, getBooks, reorderChapters, deleteBook, exportBook, getExportJobStatus, duplicateBook, reorderBooks } = require('../controllers/book.controller');
 const requireAuth = require('../middlewares/requireAuth');
 
 router.get('/', requireAuth, getBooks);
 router.post('/', requireAuth, createBook);
+router.put('/reorder', requireAuth, reorderBooks);
 router.put('/:bookId', requireAuth, updateBook);
 router.delete('/:bookId', requireAuth, deleteBook);
 router.post('/:bookId/duplicate', requireAuth, duplicateBook);
