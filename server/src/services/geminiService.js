@@ -235,6 +235,7 @@ Description: ${description || 'None'}
 
 Write a highly detailed, 2-sentence visual prompt describing the perfect book cover image for this book. 
 Focus strictly on the visual elements (e.g., subjects, lighting, colors, aesthetic, background). 
+If the book features historical, religious, or mythological figures (e.g., God, specific deities, historical leaders), ensure the visual prompt explicitly asks for culturally accurate representations and recognizable, authentic iconography rather than random or generic concepts.
 Do NOT include the book title text in the prompt, just the art. Make it cinematic and beautiful.`;
 
   let visualPrompt = '';
@@ -255,8 +256,9 @@ Do NOT include the book title text in the prompt, just the art. Make it cinemati
   
   // 2. Pass the detailed prompt to Pollinations AI
   try {
-    const encodedPrompt = encodeURIComponent(visualPrompt + " minimalist typography elegant premium design");
-    const url = `https://image.pollinations.ai/prompt/${encodedPrompt}?width=800&height=1200&nologo=true&seed=${Math.floor(Math.random() * 1000)}`;
+    const visualEnhancements = "majestic, divine, beautiful, highly detailed, perfect composition, masterpiece, stunning digital art, symmetrical face, flawless anatomy";
+    const encodedPrompt = encodeURIComponent(visualPrompt + ", " + visualEnhancements);
+    const url = `https://image.pollinations.ai/prompt/${encodedPrompt}?width=800&height=1200&nologo=true&model=flux&seed=${Math.floor(Math.random() * 100000)}`;
     
     const response = await fetch(url);
     if (!response.ok) {
