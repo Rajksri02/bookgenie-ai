@@ -41,7 +41,6 @@ const OutlineCard = ({ id, chapter, index, onUpdate, onDelete, onWrite, bookCont
       onUpdate(index, response.data);
       setFeedback('');
     } catch (err) {
-      console.error('Failed to regenerate chapter:', err);
       toast.error('Failed to regenerate chapter. Please try again.');
     } finally {
       setIsRegenerating(false);
@@ -52,12 +51,12 @@ const OutlineCard = ({ id, chapter, index, onUpdate, onDelete, onWrite, bookCont
     switch (status) {
       case 'completed':
       case 'reviewed':
-        return <span className="text-xs font-medium bg-green-100 text-green-700 px-2 py-1 rounded">Reviewed</span>;
+        return <span className="text-xs font-medium bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 px-2 py-1 rounded">Reviewed</span>;
       case 'ai-generated':
-        return <span className="text-xs font-medium bg-purple-100 text-purple-700 px-2 py-1 rounded">AI-Generated</span>;
+        return <span className="text-xs font-medium bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-400 px-2 py-1 rounded">AI-Generated</span>;
       case 'draft':
       default:
-        return <span className="text-xs font-medium bg-yellow-100 text-yellow-700 px-2 py-1 rounded">Draft</span>;
+        return <span className="text-xs font-medium bg-yellow-100 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-400 px-2 py-1 rounded">Draft</span>;
     }
   };
 
@@ -65,8 +64,8 @@ const OutlineCard = ({ id, chapter, index, onUpdate, onDelete, onWrite, bookCont
     <div
       ref={setNodeRef}
       style={style}
-      className={`mb-4 bg-white rounded-xl border shadow-sm ${
-        isDragging ? 'border-primary-500 shadow-lg opacity-80' : 'border-slate-200'
+      className={`bg-white dark:bg-slate-900 rounded-xl border shadow-sm ${
+        isDragging ? 'border-primary-500 shadow-lg opacity-80' : 'border-slate-200 dark:border-slate-800'
       }`}
     >
       <div className="flex items-start p-4">
@@ -74,10 +73,10 @@ const OutlineCard = ({ id, chapter, index, onUpdate, onDelete, onWrite, bookCont
         <div
           {...attributes}
           {...listeners}
-          className="pt-1 mr-3 text-slate-400 hover:text-slate-600 cursor-grab active:cursor-grabbing outline-none focus-visible:ring-2 focus-visible:ring-primary-500 rounded"
+          className="mt-1 mr-3 text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-300 cursor-grab active:cursor-grabbing outline-none focus-visible:ring-2 focus-visible:ring-primary-500 rounded flex-shrink-0 touch-none"
           tabIndex={0}
           role="button"
-          aria-label={`Drag ${chapter.title}`}
+          aria-label={`Drag ${chapter?.title || 'chapter'}`}
         >
           <GripVertical size={20} />
         </div>
@@ -89,27 +88,27 @@ const OutlineCard = ({ id, chapter, index, onUpdate, onDelete, onWrite, bookCont
                 type="text"
                 value={editData.title || ''}
                 onChange={(e) => setEditData({ ...editData, title: e.target.value })}
-                className="w-full font-bold text-lg px-2 py-1 border border-primary-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-primary-500"
+                className="w-full font-bold text-lg px-3 py-2 bg-transparent dark:text-white border border-slate-300 dark:border-slate-700 rounded-xl focus:outline-none focus:ring-1 focus:ring-primary-500 transition-colors"
               />
               <textarea
                 value={editData.summary || ''}
                 onChange={(e) => setEditData({ ...editData, summary: e.target.value })}
-                className="w-full text-slate-700 px-2 py-1 border border-primary-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-primary-500"
+                className="w-full text-slate-700 dark:text-slate-300 px-3 py-2 bg-transparent border border-slate-300 dark:border-slate-700 rounded-xl focus:outline-none focus:ring-1 focus:ring-primary-500 transition-colors"
                 rows={3}
               />
               <div className="flex items-center gap-2">
-                <span className="text-sm text-slate-500">Word Count:</span>
+                <span className="text-sm text-slate-500 dark:text-slate-400">Word Count:</span>
                 <input
                   type="number"
                   value={editData.estimatedWords || 0}
                   onChange={(e) => setEditData({ ...editData, estimatedWords: parseInt(e.target.value, 10) || 0 })}
-                  className="w-24 px-2 py-1 border border-primary-300 rounded-lg focus:outline-none text-sm"
+                  className="w-24 px-3 py-2 bg-transparent dark:text-white border border-slate-300 dark:border-slate-700 rounded-xl focus:outline-none text-sm transition-colors"
                 />
               </div>
               <div className="flex gap-2 pt-2">
                 <button
                   onClick={handleSaveEdit}
-                  className="flex items-center gap-1 text-sm bg-primary-600 text-white px-3 py-1.5 rounded-lg hover:bg-primary-700 transition-colors"
+                  className="flex items-center gap-1 text-sm bg-primary-600 text-white px-4 py-2 rounded-xl hover:bg-primary-700 transition-colors shadow-sm"
                 >
                   <Check size={16} /> Save
                 </button>
@@ -118,7 +117,7 @@ const OutlineCard = ({ id, chapter, index, onUpdate, onDelete, onWrite, bookCont
                     setEditData({ ...chapter });
                     setIsEditing(false);
                   }}
-                  className="text-sm text-slate-600 hover:text-slate-900 px-3 py-1.5 transition-colors"
+                  className="text-sm text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white px-4 py-2 transition-colors"
                 >
                   Cancel
                 </button>
@@ -127,51 +126,52 @@ const OutlineCard = ({ id, chapter, index, onUpdate, onDelete, onWrite, bookCont
           ) : (
             <>
               <div className="flex justify-between items-start mb-2">
-                <h3 className="font-bold text-lg text-slate-900 flex items-center gap-2 flex-wrap">
-                  <span className="text-slate-400 mr-1">{index + 1}.</span>
+                <h3 className="font-bold text-lg text-slate-900 dark:text-white flex items-center gap-2 flex-wrap">
+                  <span className="text-slate-400 dark:text-slate-500 mr-1">{index + 1}.</span>
                   {chapter.title}
                   {getStatusBadge(chapter.status)}
                 </h3>
-                <div className="flex items-center gap-2 text-slate-400 shrink-0">
-                  <button onClick={() => setIsEditing(true)} className="hover:text-primary-600 p-1 rounded transition-colors" title="Edit Manually">
+                <div className="flex items-center gap-2 text-slate-400 dark:text-slate-500 shrink-0">
+                  <button onClick={() => setIsEditing(true)} className="hover:text-primary-600 dark:hover:text-primary-400 p-1 rounded transition-colors" title="Edit Manually">
                     <Edit2 size={16} />
                   </button>
-                  <button onClick={() => onDelete(index)} className="hover:text-red-600 p-1 rounded transition-colors" title="Delete Chapter">
+                  <button onClick={() => onDelete(index)} className="hover:text-red-600 dark:hover:text-red-400 p-1 rounded transition-colors" title="Delete Chapter">
                     <Trash2 size={16} />
                   </button>
                 </div>
               </div>
-              <p className="text-slate-700 mb-3 text-sm leading-relaxed">{chapter.summary}</p>
+              <p className="text-slate-700 dark:text-slate-300 mb-3 text-sm leading-relaxed">{chapter.summary}</p>
               
-              <div className="flex justify-between items-end border-t border-slate-100 pt-3 mt-3">
-                <span className="text-xs font-medium text-slate-500 bg-slate-100 px-2 py-1 rounded-md">
+              <div className="flex flex-col sm:flex-row justify-between sm:items-end border-t border-slate-100 dark:border-slate-800 pt-4 mt-3 gap-3">
+                <span className="text-xs font-medium text-slate-500 dark:text-slate-400 bg-slate-50 dark:bg-slate-800 px-3 py-1.5 rounded-lg w-fit">
                   ~{chapter.estimatedWords} words
                 </span>
                 
-                {/* Regenerate Section */}
-                <div className="flex items-center gap-2 flex-wrap justify-end mt-2 sm:mt-0">
+                <div className="flex items-center gap-2 flex-wrap sm:justify-end">
                   <input 
                     type="text" 
                     placeholder="Feedback for AI (optional)" 
                     value={feedback}
                     onChange={(e) => setFeedback(e.target.value)}
-                    className="text-xs px-2 py-1.5 border border-slate-200 rounded-lg w-32 sm:w-48 focus:outline-none focus:border-primary-400 transition-colors"
+                    className="text-xs px-3 py-2 bg-transparent dark:text-white border border-slate-200 dark:border-slate-700 rounded-xl w-full sm:w-48 focus:outline-none focus:border-primary-400 transition-colors"
                   />
-                  <button 
-                    onClick={handleRegenerate}
-                    disabled={isRegenerating}
-                    className={`flex items-center gap-1 text-xs px-2 py-1.5 rounded-lg text-primary-600 hover:bg-primary-50 transition-colors border border-transparent hover:border-primary-200 ${isRegenerating ? 'opacity-50 cursor-not-allowed' : ''}`}
-                  >
-                    <RefreshCw size={14} className={isRegenerating ? 'animate-spin' : ''} />
-                    {isRegenerating ? 'Regenerating...' : 'Regenerate'}
-                  </button>
-                  <button
-                    onClick={onWrite}
-                    className="flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-lg bg-primary-600 text-white hover:bg-primary-700 transition-colors shadow-sm"
-                  >
-                    <PenLine size={14} />
-                    Write Chapter
-                  </button>
+                  <div className="flex gap-2 w-full sm:w-auto">
+                    <button 
+                      onClick={handleRegenerate}
+                      disabled={isRegenerating}
+                      className={`flex-1 sm:flex-none justify-center flex items-center gap-1 text-xs px-3 py-2 rounded-xl text-primary-600 dark:text-primary-400 hover:bg-primary-50 dark:hover:bg-primary-900/20 transition-colors border border-transparent hover:border-primary-200 dark:hover:border-primary-800 ${isRegenerating ? 'opacity-50 cursor-not-allowed' : ''}`}
+                    >
+                      <RefreshCw size={14} className={isRegenerating ? 'animate-spin' : ''} />
+                      {isRegenerating ? 'Generating...' : 'Regenerate'}
+                    </button>
+                    <button
+                      onClick={onWrite}
+                      className="flex-1 sm:flex-none justify-center flex items-center gap-1.5 text-xs px-4 py-2 rounded-xl bg-primary-600 text-white hover:bg-primary-700 transition-colors shadow-sm"
+                    >
+                      <PenLine size={14} />
+                      Write Chapter
+                    </button>
+                  </div>
                 </div>
               </div>
             </>

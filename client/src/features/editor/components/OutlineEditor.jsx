@@ -19,6 +19,7 @@ import BookMetadataForm from './BookMetadataForm';
 import { bookApi } from '../api/bookApi';
 import toast from 'react-hot-toast';
 import { ArrowLeft, Save, RotateCcw, FileDown } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
 
 const OutlineEditor = ({ initialOutline, onStartOver, bookContext }) => {
   const bookId = initialOutline?._id || bookContext?._id || initialOutline?.book?._id || 'new';
@@ -59,7 +60,6 @@ const OutlineEditor = ({ initialOutline, onStartOver, bookContext }) => {
   const [isExporting, setIsExporting] = useState(false);
   const [exportJobId, setExportJobId] = useState(null);
 
-  // Re-initialize if the underlying book changes (e.g. creating a new book after an old one)
   useEffect(() => {
     const chaptersInitial = getInitialState('chapters', initialOutline.chapters || []);
     setChapters(chaptersInitial);
@@ -77,7 +77,6 @@ const OutlineEditor = ({ initialOutline, onStartOver, bookContext }) => {
     setMetadata(metadataInitial);
   }, [bookId]);
 
-  // Poll for export job status
   useEffect(() => {
     let intervalId;
     if (exportJobId) {
@@ -93,10 +92,9 @@ const OutlineEditor = ({ initialOutline, onStartOver, bookContext }) => {
               const backendUrl = import.meta.env.VITE_API_URL ? import.meta.env.VITE_API_URL.replace('/api', '') : 'http://localhost:5050';
               const fullUrl = `${backendUrl}${fileUrl}`;
               
-              // Automatically trigger the download
               const a = document.createElement('a');
               a.href = fullUrl;
-              a.download = ''; // Browser will use filename from URL or headers
+              a.download = ''; 
               a.target = '_blank';
               document.body.appendChild(a);
               a.click();
@@ -105,7 +103,7 @@ const OutlineEditor = ({ initialOutline, onStartOver, bookContext }) => {
               toast.success((t) => (
                 <span className="flex items-center gap-2">
                   Export complete! 
-                  <a href={fullUrl} target="_blank" rel="noreferrer" className="underline font-bold text-primary-300">Download manually if it didn't start</a>
+                  <a href={fullUrl} target="_blank" rel="noreferrer" className="underline font-bold text-primary-400">Download manually if it didn't start</a>
                 </span>
               ), { duration: 10000 });
             } else if (status === 'failed') {
@@ -118,14 +116,13 @@ const OutlineEditor = ({ initialOutline, onStartOver, bookContext }) => {
         } catch (err) {
           console.error("Failed to check export status", err);
         }
-      }, 3000); // poll every 3 seconds
+      }, 3000);
     }
     return () => {
       if (intervalId) clearInterval(intervalId);
     };
   }, [exportJobId]);
 
-  // Autosave to localStorage
   useEffect(() => {
     localStorage.setItem(DRAFT_KEY, JSON.stringify({ metadata, chapters }));
   }, [metadata, chapters]);
@@ -151,19 +148,15 @@ const OutlineEditor = ({ initialOutline, onStartOver, bookContext }) => {
       const oldChapters = [...chapters];
       const newChapters = arrayMove(chapters, oldIndex, newIndex);
       
-      // Optimistic UI update
       setChapters(newChapters);
 
-      // Persist to backend if we have a book context
       if (initialOutline.book?._id || bookContext?._id) {
         try {
           const bookId = initialOutline.book?._id || bookContext?._id;
           const chapterIds = newChapters.map(c => c._id);
           await bookApi.reorderChapters(bookId, chapterIds);
         } catch (error) {
-          console.error('Failed to save reordered chapters:', error);
           toast.error('Failed to save the new chapter order.');
-          // Rollback
           setChapters(oldChapters);
         }
       }
@@ -177,11 +170,37 @@ const OutlineEditor = ({ initialOutline, onStartOver, bookContext }) => {
   };
 
   const handleDeleteChapter = (index) => {
-    if (window.confirm('Are you sure you want to delete this chapter?')) {
-      const newChapters = [...chapters];
-      newChapters.splice(index, 1);
-      setChapters(newChapters);
-    }
+    toast.custom((t) => (
+      <div className={`${t.visible ? 'animate-enter' : 'animate-leave'} max-w-sm w-full bg-white dark:bg-slate-800 shadow-lg rounded-xl pointer-events-auto flex ring-1 ring-black/5 dark:ring-white/5`}>
+        <div className="flex-1 w-0 p-4">
+          <div className="flex items-start">
+            <div className="ml-3 flex-1">
+              <p className="text-sm font-medium text-slate-900 dark:text-white">Delete Chapter?</p>
+              <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">Are you sure you want to delete this chapter?</p>
+            </div>
+          </div>
+        </div>
+        <div className="flex border-l border-slate-200 dark:border-slate-700">
+          <button
+            onClick={() => {
+              toast.dismiss(t.id);
+              const newChapters = [...chapters];
+              newChapters.splice(index, 1);
+              setChapters(newChapters);
+            }}
+            className="w-full border border-transparent rounded-none rounded-tr-xl p-4 flex items-center justify-center text-sm font-medium text-red-600 hover:text-red-500 hover:bg-slate-50 dark:hover:bg-slate-700 focus:outline-none"
+          >
+            Confirm
+          </button>
+          <button
+            onClick={() => toast.dismiss(t.id)}
+            className="w-full border border-transparent rounded-none p-4 flex items-center justify-center text-sm font-medium text-slate-600 dark:text-slate-400 hover:text-slate-500 hover:bg-slate-50 dark:hover:bg-slate-700 focus:outline-none"
+          >
+            Cancel
+          </button>
+        </div>
+      </div>
+    ), { duration: Infinity });
   };
 
   const handleCommitToBook = async () => {
@@ -201,7 +220,6 @@ const OutlineEditor = ({ initialOutline, onStartOver, bookContext }) => {
       }
 
       if (res.success) {
-        // Clear draft
         localStorage.removeItem(DRAFT_KEY);
         toast.success(existingBookId ? "Book successfully updated!" : "Book successfully saved to the database!");
         if (!existingBookId && res.data?.book?._id) {
@@ -209,7 +227,6 @@ const OutlineEditor = ({ initialOutline, onStartOver, bookContext }) => {
         }
       }
     } catch (error) {
-      console.error('Failed to save book:', error);
       toast.error(error.error || 'Failed to save book to database.');
     } finally {
       setIsSaving(false);
@@ -230,7 +247,6 @@ const OutlineEditor = ({ initialOutline, onStartOver, bookContext }) => {
         toast.success(`Started generating ${format.toUpperCase()}...`);
       }
     } catch (error) {
-      console.error('Export error:', error);
       toast.error('Failed to start export.');
       setIsExporting(false);
     }
@@ -242,10 +258,15 @@ const OutlineEditor = ({ initialOutline, onStartOver, bookContext }) => {
     const nextChapter = writingChapterIndex < chapters.length - 1 ? chapters[writingChapterIndex + 1] : null;
     
     return (
-      <div className="max-w-5xl mx-auto py-8 px-4 h-screen flex flex-col">
+      <motion.div 
+        initial={{ opacity: 0, x: 20 }}
+        animate={{ opacity: 1, x: 0 }}
+        exit={{ opacity: 0, x: -20 }}
+        className="max-w-5xl mx-auto py-8 px-4 sm:px-6 min-h-screen flex flex-col"
+      >
         <button 
           onClick={() => setWritingChapterIndex(null)}
-          className="mb-4 text-primary-600 hover:text-primary-700 hover:underline self-start flex items-center gap-1 font-medium transition-colors"
+          className="mb-4 text-primary-600 dark:text-primary-400 hover:text-primary-700 dark:hover:text-primary-300 hover:underline self-start flex items-center gap-1 font-medium transition-colors"
         >
           <ArrowLeft size={18} />
           Back to Outline
@@ -263,52 +284,56 @@ const OutlineEditor = ({ initialOutline, onStartOver, bookContext }) => {
             }}
           />
         </div>
-      </div>
+      </motion.div>
     );
   }
 
-  // Ensure each chapter has an id for SortableContext.
-  // The backend gives us _id, but if it doesn't exist, fallback to index+title (not ideal for strict sorting but works for local)
   const items = chapters.map((c, i) => c._id || `chapter-${i}-${c.title}`);
 
   return (
-    <div className="max-w-4xl mx-auto py-8 px-4">
-      <div className="flex justify-between items-center mb-6">
-        <h1 className="text-2xl font-bold text-slate-900 tracking-tight">Book Details</h1>
-        <div className="flex gap-3">
+    <motion.div 
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      className="max-w-4xl mx-auto py-8 px-4 sm:px-6"
+    >
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8">
+        <h1 className="text-2xl font-bold text-slate-900 dark:text-white tracking-tight">Book Details</h1>
+        <div className="flex flex-wrap gap-3 w-full sm:w-auto">
           <button 
             onClick={() => {
               localStorage.removeItem(DRAFT_KEY);
               onStartOver();
             }}
-            className="px-4 py-2 flex items-center gap-2 text-slate-600 bg-white border border-slate-300 rounded-xl hover:bg-slate-50 transition-colors shadow-sm"
+            className="flex-1 sm:flex-none px-4 py-2.5 flex items-center justify-center gap-2 text-slate-600 dark:text-slate-300 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors shadow-sm"
           >
             <RotateCcw size={16} />
-            Start Over
+            <span className="hidden sm:inline">Start Over</span>
           </button>
+          
+          {(initialOutline._id || bookContext?._id) && (
+            <div className="relative group flex-1 sm:flex-none">
+              <button 
+                disabled={isExporting}
+                className="w-full px-4 py-2.5 flex items-center justify-center gap-2 bg-slate-800 dark:bg-slate-700 text-white font-medium rounded-xl hover:bg-slate-900 dark:hover:bg-slate-600 transition-colors shadow-sm disabled:opacity-50"
+              >
+                <FileDown size={18} />
+                <span className="hidden sm:inline">{isExporting ? 'Exporting...' : 'Export'}</span>
+              </button>
+              <div className="absolute right-0 top-full mt-2 w-40 bg-white dark:bg-slate-800 rounded-xl shadow-lg border border-slate-100 dark:border-slate-700 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-50 overflow-hidden">
+                <button onClick={() => handleExport('pdf')} className="w-full text-left px-4 py-2 hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 font-medium border-b border-slate-100 dark:border-slate-700">PDF Document</button>
+                <button onClick={() => handleExport('docx')} className="w-full text-left px-4 py-2 hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 font-medium">Word (DOCX)</button>
+              </div>
+            </div>
+          )}
+
           <button 
             onClick={handleCommitToBook}
             disabled={isSaving || isExporting}
-            className="px-6 py-2 flex items-center gap-2 bg-primary-600 text-white font-medium rounded-xl hover:bg-primary-700 transition-colors shadow-sm disabled:opacity-50"
+            className="flex-1 sm:flex-none px-6 py-2.5 flex items-center justify-center gap-2 bg-primary-600 text-white font-medium rounded-xl hover:bg-primary-700 transition-colors shadow-sm disabled:opacity-50"
           >
             <Save size={18} />
             {isSaving ? 'Saving...' : (initialOutline._id || bookContext?._id) ? 'Save Changes' : 'Create Book'}
           </button>
-          {(initialOutline._id || bookContext?._id) && (
-            <div className="relative group">
-              <button 
-                disabled={isExporting}
-                className="px-4 py-2 flex items-center gap-2 bg-slate-800 text-white font-medium rounded-xl hover:bg-slate-900 transition-colors shadow-sm disabled:opacity-50"
-              >
-                <FileDown size={18} />
-                {isExporting ? 'Exporting...' : 'Export'}
-              </button>
-              <div className="absolute right-0 mt-2 w-32 bg-white rounded-xl shadow-lg border border-slate-100 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-50 overflow-hidden">
-                <button onClick={() => handleExport('pdf')} className="w-full text-left px-4 py-2 hover:bg-slate-50 text-slate-700 font-medium border-b border-slate-100">PDF Document</button>
-                <button onClick={() => handleExport('docx')} className="w-full text-left px-4 py-2 hover:bg-slate-50 text-slate-700 font-medium">Word (DOCX)</button>
-              </div>
-            </div>
-          )}
         </div>
       </div>
 
@@ -319,9 +344,8 @@ const OutlineEditor = ({ initialOutline, onStartOver, bookContext }) => {
       />
 
       <div className="flex justify-between items-end mb-4">
-        <h2 className="text-xl font-bold text-slate-800 tracking-tight">Chapters ({chapters.length})</h2>
+        <h2 className="text-xl font-bold text-slate-800 dark:text-white tracking-tight">Chapters ({chapters.length})</h2>
       </div>
-
 
       <DndContext 
         sensors={sensors}
@@ -332,7 +356,7 @@ const OutlineEditor = ({ initialOutline, onStartOver, bookContext }) => {
           items={items}
           strategy={verticalListSortingStrategy}
         >
-          <div className="min-h-[200px]">
+          <div className="min-h-[200px] flex flex-col gap-3">
             {chapters.map((chapter, index) => (
               <OutlineCard
                 key={items[index]}
@@ -349,10 +373,10 @@ const OutlineEditor = ({ initialOutline, onStartOver, bookContext }) => {
         </SortableContext>
       </DndContext>
       
-      <div className="mt-8 text-center text-sm text-slate-400">
+      <div className="mt-8 text-center text-sm text-slate-400 dark:text-slate-500">
         Total estimated words: {chapters.reduce((acc, curr) => acc + (curr.estimatedWords || 0), 0).toLocaleString()}
       </div>
-    </div>
+    </motion.div>
   );
 };
 
