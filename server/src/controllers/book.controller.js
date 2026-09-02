@@ -1,5 +1,6 @@
 const Book = require('../models/Book.model');
 const Chapter = require('../models/Chapter.model');
+const ChapterVersion = require('../models/ChapterVersion.model');
 const ExportJob = require('../models/ExportJob.model');
 const catchAsync = require('../utils/catchAsync');
 const exportService = require('../services/export.service');
@@ -323,6 +324,47 @@ const duplicateBook = catchAsync(async (req, res, next) => {
   });
 });
 
+const getChapterVersions = catchAsync(async (req, res, next) => {
+  const { chapterId } = req.params;
+  const versions = await ChapterVersion.find({ chapter: chapterId }).sort({ createdAt: -1 });
+  res.status(200).json({ success: true, data: versions });
+});
+
+const saveChapterVersion = catchAsync(async (req, res, next) => {
+  const { chapterId } = req.params;
+  const { content, summary } = req.body;
+  
+  if (!content) {
+    return res.status(400).json({ success: false, error: 'Content is required to save a version' });
+  }
+
+  const version = await ChapterVersion.create({
+    chapter: chapterId,
+    content,
+    summary
+  });
+
+  res.status(201).json({ success: true, data: version });
+});
+
+const restoreChapterVersion = catchAsync(async (req, res, next) => {
+  const { chapterId, versionId } = req.params;
+  
+  const version = await ChapterVersion.findOne({ _id: versionId, chapter: chapterId });
+  if (!version) {
+    return res.status(404).json({ success: false, error: 'Version not found' });
+  }
+
+  // Restore the content to the chapter
+  const chapter = await Chapter.findByIdAndUpdate(
+    chapterId,
+    { content: version.content },
+    { new: true }
+  );
+
+  res.status(200).json({ success: true, data: chapter });
+});
+
 module.exports = {
   createBook,
   updateBook,
@@ -333,5 +375,8 @@ module.exports = {
   deleteBook,
   exportBook,
   getExportJobStatus,
-  duplicateBook
+  duplicateBook,
+  getChapterVersions,
+  saveChapterVersion,
+  restoreChapterVersion
 };

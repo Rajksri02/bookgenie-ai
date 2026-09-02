@@ -80,5 +80,25 @@ export const bookApi = {
   getExportJobStatus: async (jobId) => {
     const response = await apiClient.get(`/books/export-job/${jobId}`);
     return response;
+  },
+
+  getChapterVersions: async (chapterId) => {
+    const response = await apiClient.get(`/books/chapters/${chapterId}/versions`);
+    return response.data; // our standard is returning response or response.data, I'll match response for consistency with other methods, wait above autosaveChapter returns response.data
+  },
+
+  saveChapterVersion: async (chapterId, content, summary) => {
+    const response = await apiClient.post(`/books/chapters/${chapterId}/versions`, { content, summary });
+    return response.data;
+  },
+
+  restoreChapterVersion: async (chapterId, versionId) => {
+    const response = await apiClient.post(`/books/chapters/${chapterId}/versions/${versionId}/restore`);
+    return response.data;
+  },
+
+  runConsistencyCheck: async (bookId) => {
+    const response = await apiClient.post(`/books/${bookId}/consistency-check`);
+    return response.data;
   }
 };

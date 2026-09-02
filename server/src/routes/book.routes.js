@@ -1,6 +1,20 @@
 const express = require('express');
 const router = express.Router();
-const { createBook, updateBook, autosaveChapter, getBooks, reorderChapters, deleteBook, exportBook, getExportJobStatus, duplicateBook, reorderBooks } = require('../controllers/book.controller');
+const { 
+  createBook, 
+  updateBook, 
+  autosaveChapter, 
+  getBooks, 
+  reorderChapters, 
+  deleteBook, 
+  exportBook, 
+  getExportJobStatus, 
+  duplicateBook, 
+  reorderBooks,
+  getChapterVersions,
+  saveChapterVersion,
+  restoreChapterVersion
+} = require('../controllers/book.controller');
 const requireAuth = require('../middlewares/requireAuth');
 
 router.get('/', requireAuth, getBooks);
@@ -19,5 +33,10 @@ router.post('/chapters/:chapterId/autosave', requireAuth, autosaveChapter);
 
 // Reorder chapters in a book
 router.put('/:bookId/chapters/reorder', requireAuth, reorderChapters);
+
+// Chapter Versions
+router.get('/chapters/:chapterId/versions', requireAuth, getChapterVersions);
+router.post('/chapters/:chapterId/versions', requireAuth, saveChapterVersion);
+router.post('/chapters/:chapterId/versions/:versionId/restore', requireAuth, restoreChapterVersion);
 
 module.exports = router;
