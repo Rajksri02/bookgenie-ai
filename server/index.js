@@ -11,6 +11,8 @@ const authRoutes = require('./src/routes/auth.routes');
 const aiRoutes = require('./src/routes/ai.routes');
 const bookRoutes = require('./src/routes/book.routes');
 const imageRoutes = require('./src/routes/image.routes');
+const analysisRoutes = require('./src/routes/analysis.routes');
+const analyticsRoutes = require('./src/routes/analytics.routes');
 
 // Connect to database
 connectDB();
@@ -39,6 +41,8 @@ app.use('/api/auth', authRoutes);
 app.use('/api/ai', aiRoutes);
 app.use('/api/books', bookRoutes);
 app.use('/api/images', imageRoutes);
+app.use('/api', analysisRoutes);
+app.use('/api/analytics', analyticsRoutes);
 
 // Serve static uploads
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));

@@ -31,17 +31,23 @@ export const aiApi = {
       const reader = response.body.getReader();
       const decoder = new TextDecoder('utf-8');
       let done = false;
+      let buffer = '';
 
       while (!done) {
         const { value, done: readerDone } = await reader.read();
         done = readerDone;
         if (value) {
-          const chunk = decoder.decode(value, { stream: !done });
+          buffer += decoder.decode(value, { stream: !done });
           // SSE format is data: JSON_STRING\n\n
-          const lines = chunk.split('\n');
-          for (const line of lines) {
-            if (line.startsWith('data: ')) {
-              const data = line.slice(6).trim();
+          const parts = buffer.split('\n\n');
+          buffer = parts.pop(); // Keep the last incomplete part in the buffer
+
+          for (const part of parts) {
+            const dataPrefix = 'data: ';
+            let data = part.trim();
+            
+            if (data.startsWith(dataPrefix)) {
+              data = data.slice(dataPrefix.length).trim();
               if (data === '[DONE]') {
                 done = true;
                 break;
@@ -55,7 +61,8 @@ export const aiApi = {
                   onChunk(parsed.text, remaining);
                 }
               } catch (e) {
-                // Ignore incomplete JSON chunks or parse errors from split chunking
+                console.warn('Failed to parse chunk:', data, e);
+                // Ignore incomplete JSON chunks or parse errors
               }
             }
           }

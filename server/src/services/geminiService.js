@@ -89,7 +89,7 @@ const executeWithRetry = async (prompt, schema, retryCount = 1) => {
     try {
       const responseText = await executeWithFallback('executeWithRetry', async (client) => {
         const response = await client.models.generateContent({
-          model: "gemini-3.6-flash",
+          model: "gemini-3.7-flash",
           contents: prompt,
           config: {
             responseMimeType: 'application/json',
@@ -214,7 +214,7 @@ Return ONLY the rewritten text in Markdown. Keep the length roughly similar.`;
 
   const responseStream = await executeWithFallback('generateChapterStream', async (client) => {
     return await client.models.generateContentStream({
-      model: 'gemini-3.6-flash',
+      model: 'gemini-3.7-flash',
       contents: prompt
     });
   });
@@ -242,7 +242,7 @@ Do NOT include the book title text in the prompt, just the art. Make it cinemati
   try {
     const responseText = await executeWithFallback('generateCoverImagePrompt', async (client) => {
       const response = await client.models.generateContent({
-        model: "gemini-3.6-flash",
+        model: "gemini-3.7-flash",
         contents: textPrompt
       });
       return response.text;

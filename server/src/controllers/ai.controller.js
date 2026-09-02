@@ -2,6 +2,8 @@ const catchAsync = require('../utils/catchAsync');
 const geminiService = require('../services/geminiService');
 const Book = require('../models/Book.model');
 const Chapter = require('../models/Chapter.model');
+const ChapterVersion = require('../models/ChapterVersion.model');
+const UsageLog = require('../models/UsageLog.model');
 
 /**
  * @route   POST /api/ai/outline
@@ -44,6 +46,12 @@ const generateOutline = catchAsync(async (req, res) => {
 
   const savedChapters = await Chapter.insertMany(chaptersToInsert);
 
+  await UsageLog.create({
+    user: req.user._id,
+    action: 'generate_outline',
+    tokensUsed: 1500
+  });
+
   res.status(200).json({
     success: true,
     data: {
@@ -66,6 +74,12 @@ const regenerateChapter = catchAsync(async (req, res) => {
     tone,
     previousChapterTitle,
     feedback
+  });
+
+  await UsageLog.create({
+    user: req.user._id,
+    action: 'generate_chapter',
+    tokensUsed: 1000
   });
 
   res.status(200).json({
@@ -127,7 +141,19 @@ const generateChapterContent = catchAsync(async (req, res) => {
         content: fullContent,
         status: 'completed'
       });
+      
+      await ChapterVersion.create({
+        chapter: req.params.chapterId,
+        content: fullContent,
+        summary: 'AI Generated Content'
+      });
     }
+
+    await UsageLog.create({
+      user: req.user._id,
+      action: 'generate_chapter',
+      tokensUsed: 2000
+    });
 
     // Signal completion
     res.write(`data: [DONE]\n\n`);
