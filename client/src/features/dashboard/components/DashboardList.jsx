@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { LogOut, BookOpen, Plus, Clock, Edit, Trash2, Copy, Download, Search, Filter, ArrowDownUp, MoreVertical, FileText, CheckCircle2, Moon, Sun, GripVertical } from 'lucide-react';
+import { LogOut, BookOpen, Plus, Clock, Edit, Trash2, Copy, Download, Search, Filter, ArrowDownUp, MoreVertical, FileText, CheckCircle2, Moon, Sun, GripVertical, Activity } from 'lucide-react';
 import { useAuth } from '../../auth/hooks/useAuth';
 import { bookApi } from '../../editor/api/bookApi';
 import toast from 'react-hot-toast';
@@ -37,6 +37,14 @@ const DashboardLayout = ({ children }) => {
             <p className="text-slate-500 dark:text-slate-400 mt-1">Welcome back, {user?.name || 'User'}!</p>
           </div>
           <div className="flex items-center gap-2 sm:gap-4">
+            <Link
+              to="/dashboard/analytics"
+              className="p-2 text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white transition-colors bg-slate-50 dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-xl flex items-center gap-2 font-medium"
+              title="Usage Analytics"
+            >
+              <Activity size={18} />
+              <span className="hidden sm:inline text-sm">Analytics</span>
+            </Link>
             <button
               onClick={toggleTheme}
               className="p-2 text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white transition-colors bg-slate-50 dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-xl"
