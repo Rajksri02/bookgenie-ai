@@ -10,6 +10,7 @@ import ForgotPassword from './features/auth/components/ForgotPassword';
 import ResetPassword from './features/auth/components/ResetPassword';
 import { bookApi } from './features/editor/api/bookApi';
 import { DashboardList } from './features/dashboard/components/DashboardList';
+import UsageDashboard from './features/dashboard/components/UsageDashboard';
 import { Toaster } from 'react-hot-toast';
 import { ThemeProvider, useTheme } from './hooks/useTheme';
 import { AnimatePresence } from 'framer-motion';
@@ -126,6 +127,7 @@ const AnimatedRoutes = () => {
           <Route path="/dashboard" element={<DashboardList />} />
           <Route path="/dashboard/new" element={<DashboardNew />} />
           <Route path="/dashboard/edit/:bookId" element={<DashboardEdit />} />
+          <Route path="/dashboard/analytics" element={<UsageDashboard />} />
         </Route>
       </Routes>
     </AnimatePresence>

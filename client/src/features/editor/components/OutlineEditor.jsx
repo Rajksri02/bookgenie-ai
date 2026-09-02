@@ -15,10 +15,12 @@ import {
 } from '@dnd-kit/sortable';
 import OutlineCard from './OutlineCard';
 import ChapterGenerator from './ChapterGenerator';
+import VersionHistoryDrawer from './VersionHistoryDrawer';
+import ConsistencyReportModal from './ConsistencyReportModal';
 import BookMetadataForm from './BookMetadataForm';
 import { bookApi } from '../api/bookApi';
 import toast from 'react-hot-toast';
-import { ArrowLeft, Save, RotateCcw, FileDown } from 'lucide-react';
+import { ArrowLeft, Save, RotateCcw, FileDown, History, CheckCircle } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
 const OutlineEditor = ({ initialOutline, onStartOver, bookContext }) => {
@@ -59,6 +61,10 @@ const OutlineEditor = ({ initialOutline, onStartOver, bookContext }) => {
   const [isSaving, setIsSaving] = useState(false);
   const [isExporting, setIsExporting] = useState(false);
   const [exportJobId, setExportJobId] = useState(null);
+  const [isVersionHistoryOpen, setIsVersionHistoryOpen] = useState(false);
+  const [isConsistencyModalOpen, setIsConsistencyModalOpen] = useState(false);
+  const [consistencyReport, setConsistencyReport] = useState(null);
+  const [isCheckingConsistency, setIsCheckingConsistency] = useState(false);
 
   useEffect(() => {
     const chaptersInitial = getInitialState('chapters', initialOutline.chapters || []);
@@ -252,6 +258,30 @@ const OutlineEditor = ({ initialOutline, onStartOver, bookContext }) => {
     }
   };
 
+  const handleRunConsistencyCheck = async () => {
+    const existingBookId = initialOutline._id || bookContext?._id;
+    if (!existingBookId) {
+      toast.error("Please save the book first before running the consistency check.");
+      return;
+    }
+
+    setIsCheckingConsistency(true);
+    setIsConsistencyModalOpen(true);
+    setConsistencyReport(null);
+
+    try {
+      const res = await bookApi.runConsistencyCheck(existingBookId);
+      if (res.success) {
+        setConsistencyReport(res.data);
+      }
+    } catch (error) {
+      toast.error('Failed to run consistency check.');
+      setIsConsistencyModalOpen(false);
+    } finally {
+      setIsCheckingConsistency(false);
+    }
+  };
+
   if (writingChapterIndex !== null) {
     const chapter = chapters[writingChapterIndex];
     const prevChapter = writingChapterIndex > 0 ? chapters[writingChapterIndex - 1] : null;
@@ -264,13 +294,23 @@ const OutlineEditor = ({ initialOutline, onStartOver, bookContext }) => {
         exit={{ opacity: 0, x: -20 }}
         className="max-w-5xl mx-auto py-8 px-4 sm:px-6 min-h-screen flex flex-col"
       >
-        <button 
-          onClick={() => setWritingChapterIndex(null)}
-          className="mb-4 text-primary-600 dark:text-primary-400 hover:text-primary-700 dark:hover:text-primary-300 hover:underline self-start flex items-center gap-1 font-medium transition-colors"
-        >
-          <ArrowLeft size={18} />
-          Back to Outline
-        </button>
+        <div className="flex justify-between items-center mb-4">
+          <button 
+            onClick={() => setWritingChapterIndex(null)}
+            className="text-primary-600 dark:text-primary-400 hover:text-primary-700 dark:hover:text-primary-300 hover:underline flex items-center gap-1 font-medium transition-colors"
+          >
+            <ArrowLeft size={18} />
+            Back to Outline
+          </button>
+          
+          <button
+            onClick={() => setIsVersionHistoryOpen(true)}
+            className="flex items-center gap-2 text-sm text-slate-600 dark:text-slate-400 hover:text-primary-600 dark:hover:text-primary-400 bg-white dark:bg-slate-800 px-3 py-1.5 rounded-lg border border-slate-200 dark:border-slate-700 transition-colors shadow-sm"
+          >
+            <History size={16} />
+            Version History
+          </button>
+        </div>
         <div className="flex-1">
           <ChapterGenerator 
             chapter={chapter}
@@ -284,6 +324,17 @@ const OutlineEditor = ({ initialOutline, onStartOver, bookContext }) => {
             }}
           />
         </div>
+        
+        <VersionHistoryDrawer 
+          isOpen={isVersionHistoryOpen}
+          onClose={() => setIsVersionHistoryOpen(false)}
+          chapterId={chapter._id}
+          onRestore={(restoredContent) => {
+            const newChapters = [...chapters];
+            newChapters[writingChapterIndex] = { ...newChapters[writingChapterIndex], content: restoredContent };
+            setChapters(newChapters);
+          }}
+        />
       </motion.div>
     );
   }
@@ -324,6 +375,17 @@ const OutlineEditor = ({ initialOutline, onStartOver, bookContext }) => {
                 <button onClick={() => handleExport('docx')} className="w-full text-left px-4 py-2 hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 font-medium">Word (DOCX)</button>
               </div>
             </div>
+          )}
+
+          {(initialOutline._id || bookContext?._id) && (
+            <button 
+              onClick={handleRunConsistencyCheck}
+              disabled={isCheckingConsistency || isSaving || isExporting}
+              className="flex-1 sm:flex-none px-4 py-2.5 flex items-center justify-center gap-2 text-primary-700 dark:text-primary-300 bg-primary-50 dark:bg-primary-900/30 font-medium rounded-xl hover:bg-primary-100 dark:hover:bg-primary-900/50 transition-colors shadow-sm disabled:opacity-50"
+            >
+              <CheckCircle size={18} />
+              <span className="hidden sm:inline">Consistency Check</span>
+            </button>
           )}
 
           <button 
@@ -376,6 +438,12 @@ const OutlineEditor = ({ initialOutline, onStartOver, bookContext }) => {
       <div className="mt-8 text-center text-sm text-slate-400 dark:text-slate-500">
         Total estimated words: {chapters.reduce((acc, curr) => acc + (curr.estimatedWords || 0), 0).toLocaleString()}
       </div>
+
+      <ConsistencyReportModal 
+        isOpen={isConsistencyModalOpen}
+        onClose={() => setIsConsistencyModalOpen(false)}
+        report={consistencyReport}
+      />
     </motion.div>
   );
 };
