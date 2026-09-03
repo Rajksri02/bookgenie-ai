@@ -88,15 +88,16 @@ const executeWithRetry = async (prompt, schema, retryCount = 1) => {
   while (attempt <= retryCount) {
     try {
       const responseText = await executeWithFallback('executeWithRetry', async (client) => {
-        const response = await client.models.generateContent({
-          model: "gemini-3.7-flash",
-          contents: prompt,
-          config: {
-            responseMimeType: 'application/json',
-            responseSchema: schema
+        const response = await client.interactions.create({
+          model: "gemini-3.5-flash-lite",
+          input: prompt,
+          response_format: {
+            type: 'text',
+            mime_type: 'application/json',
+            schema: schema
           }
         });
-        return response.text;
+        return response.output_text;
       });
 
       const strippedOutput = stripMarkdownFences(responseText);
@@ -213,13 +214,22 @@ Return ONLY the rewritten text in Markdown. Keep the length roughly similar.`;
   }
 
   const responseStream = await executeWithFallback('generateChapterStream', async (client) => {
-    return await client.models.generateContentStream({
-      model: 'gemini-3.7-flash',
-      contents: prompt
+    return await client.interactions.create({
+      model: 'gemini-3.5-flash-lite',
+      input: prompt,
+      stream: true
     });
   });
 
-  return responseStream;
+  async function* yieldText() {
+    for await (const event of responseStream) {
+      if ((event.event_type === "step.delta" || event.type === "step.delta") && event.delta?.text) {
+        yield { text: event.delta.text };
+      }
+    }
+  }
+
+  return yieldText();
 };
 
 const generateCoverImage = async ({ title, subtitle, description, genre, tone }) => {
@@ -241,11 +251,11 @@ Do NOT include the book title text in the prompt, just the art. Make it cinemati
   let visualPrompt = '';
   try {
     const responseText = await executeWithFallback('generateCoverImagePrompt', async (client) => {
-      const response = await client.models.generateContent({
-        model: "gemini-3.7-flash",
-        contents: textPrompt
+      const response = await client.interactions.create({
+        model: "gemini-3.5-flash-lite",
+        input: textPrompt
       });
-      return response.text;
+      return response.output_text;
     });
     visualPrompt = responseText.trim();
     console.log("Gemini generated visual prompt:", visualPrompt);
@@ -278,7 +288,46 @@ Do NOT include the book title text in the prompt, just the art. Make it cinemati
   }
 };
 
+
+const analyzeStyleConsistency = async (book, chapters) => {
+  const prompt = `You are an expert editor and writing coach.
+Analyze the following book chapters for writing style consistency, tone, and pacing.
+
+Book Title: ${book.title}
+Genre: ${book.genre}
+Tone: ${book.tone}
+
+Chapters content:
+${chapters.map(c => `Chapter ${c.order} - ${c.title}:
+${c.content.substring(0, 1000)}...`).join('\n\n')}
+
+Analyze if the tone and style remain consistent across these excerpts. Provide a score out of 10, an overall assessment, and specific flags for any inconsistencies found.`;
+
+  const schema = {
+    type: "object",
+    properties: {
+      consistencyScore: { type: "integer", description: "Score from 1 to 10" },
+      overallAssessment: { type: "string" },
+      flags: {
+        type: "array",
+        items: {
+          type: "object",
+          properties: {
+            chapterOrder: { type: "integer" },
+            issue: { type: "string" }
+          },
+          required: ["chapterOrder", "issue"]
+        }
+      }
+    },
+    required: ["consistencyScore", "overallAssessment", "flags"]
+  };
+
+  return await executeWithRetry(prompt, schema);
+};
+
 module.exports = {
+  analyzeStyleConsistency,
   generateOutline,
   regenerateSingleChapter,
   generateChapterStream,

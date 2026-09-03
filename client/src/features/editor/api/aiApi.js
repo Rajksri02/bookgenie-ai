@@ -1,4 +1,4 @@
-import apiClient from '../../../lib/apiClient';
+import apiClient, { getMemoryToken } from '../../../lib/apiClient';
 
 export const aiApi = {
   generateOutline: async (params) => {
@@ -11,7 +11,7 @@ export const aiApi = {
 
   generateChapterContentStream: async (chapterId, params, onChunk, onComplete, onError) => {
     try {
-      const token = localStorage.getItem('token');
+      const token = getMemoryToken();
       const response = await fetch(`${apiClient.defaults.baseURL}/ai/chapter/${chapterId || 'temp'}/generate`, {
         method: 'POST',
         headers: {
