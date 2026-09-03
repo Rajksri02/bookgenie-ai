@@ -33,7 +33,7 @@ export const bookApi = {
    */
   autosaveChapter: async (chapterId, content) => {
     const response = await apiClient.post(`/books/chapters/${chapterId}/autosave`, { content });
-    return response.data;
+    return response;
   },
 
   /**
@@ -84,21 +84,21 @@ export const bookApi = {
 
   getChapterVersions: async (chapterId) => {
     const response = await apiClient.get(`/books/chapters/${chapterId}/versions`);
-    return response.data; // our standard is returning response or response.data, I'll match response for consistency with other methods, wait above autosaveChapter returns response.data
+    return response;
   },
 
   saveChapterVersion: async (chapterId, content, summary) => {
     const response = await apiClient.post(`/books/chapters/${chapterId}/versions`, { content, summary });
-    return response.data;
+    return response;
   },
 
   restoreChapterVersion: async (chapterId, versionId) => {
     const response = await apiClient.post(`/books/chapters/${chapterId}/versions/${versionId}/restore`);
-    return response.data;
+    return response;
   },
 
   runConsistencyCheck: async (bookId) => {
     const response = await apiClient.post(`/books/${bookId}/consistency-check`);
-    return response.data;
+    return response;
   }
 };
