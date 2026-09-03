@@ -57,7 +57,21 @@ const OutlineEditor = ({ initialOutline, onStartOver, bookContext }) => {
     })
   );
   
-  const [writingChapterIndex, setWritingChapterIndex] = useState(null);
+  const [writingChapterIndex, setWritingChapterIndexState] = useState(() => {
+    const saved = localStorage.getItem(`bookgenie_writing_chapter_${bookId}`);
+    if (!saved || saved === 'null') return null;
+    const parsed = parseInt(saved, 10);
+    return isNaN(parsed) ? null : parsed;
+  });
+
+  const setWritingChapterIndex = (index) => {
+    setWritingChapterIndexState(index);
+    if (index !== null) {
+      localStorage.setItem(`bookgenie_writing_chapter_${bookId}`, index);
+    } else {
+      localStorage.removeItem(`bookgenie_writing_chapter_${bookId}`);
+    }
+  };
   const [isSaving, setIsSaving] = useState(false);
   const [isExporting, setIsExporting] = useState(false);
   const [exportJobId, setExportJobId] = useState(null);
@@ -275,7 +289,7 @@ const OutlineEditor = ({ initialOutline, onStartOver, bookContext }) => {
         setConsistencyReport(res.data);
       }
     } catch (error) {
-      toast.error('Failed to run consistency check.');
+      toast.error(error.response?.data?.error || error.message || 'Failed to run consistency check.');
       setIsConsistencyModalOpen(false);
     } finally {
       setIsCheckingConsistency(false);

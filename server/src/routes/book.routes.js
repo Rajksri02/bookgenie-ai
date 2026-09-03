@@ -16,6 +16,7 @@ const {
   restoreChapterVersion
 } = require('../controllers/book.controller');
 const requireAuth = require('../middlewares/requireAuth');
+const { runConsistencyCheck } = require('../controllers/analysis.controller');
 
 router.get('/', requireAuth, getBooks);
 router.post('/', requireAuth, createBook);
@@ -27,6 +28,9 @@ router.post('/:bookId/duplicate', requireAuth, duplicateBook);
 // Export book
 router.post('/:bookId/export', requireAuth, exportBook);
 router.get('/export-job/:jobId', requireAuth, getExportJobStatus);
+
+// Consistency Check
+router.post('/:bookId/consistency-check', requireAuth, runConsistencyCheck);
 
 // Autosave a chapter
 router.post('/chapters/:chapterId/autosave', requireAuth, autosaveChapter);

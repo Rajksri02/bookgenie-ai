@@ -15,6 +15,11 @@ const ChapterGenerator = ({ chapter, bookContext, previousChapter, nextChapter, 
   const [generationsRemaining, setGenerationsRemaining] = useState(null);
   const { theme } = useTheme();
 
+  const contentRef = useRef(chapter.content || '');
+  useEffect(() => {
+    contentRef.current = content;
+  }, [content]);
+
   useEffect(() => {
     setContent(chapter.content || '');
   }, [chapter._id]);
@@ -81,7 +86,11 @@ const ChapterGenerator = ({ chapter, bookContext, previousChapter, nextChapter, 
       chapter._id || 'temp', 
       params,
       (textChunk, remaining) => {
-        setContent(prev => prev + textChunk);
+        setContent(prev => {
+          const newContent = prev + textChunk;
+          contentRef.current = newContent;
+          return newContent;
+        });
         if (remaining) {
           setGenerationsRemaining(remaining);
         }
@@ -93,6 +102,11 @@ const ChapterGenerator = ({ chapter, bookContext, previousChapter, nextChapter, 
         setIsGenerating(false);
         if (remaining) {
           setGenerationsRemaining(remaining);
+        }
+        if (contentRef.current && chapter._id && chapter._id !== 'temp') {
+          bookApi.saveChapterVersion(chapter._id, contentRef.current, `AI Generation: ${mode}`)
+            .then(() => toast.success('New version saved to history'))
+            .catch(err => console.error('Failed to save version', err));
         }
       },
       (error) => {
@@ -181,21 +195,35 @@ const ChapterGenerator = ({ chapter, bookContext, previousChapter, nextChapter, 
             <button onClick={() => handleEditorViewChange('preview')} className={`flex-1 sm:flex-none px-3 py-1.5 text-xs font-medium rounded-lg transition-colors ${editorView === 'preview' ? 'bg-primary-100 dark:bg-primary-900/40 text-primary-700 dark:text-primary-300' : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-700'}`}>Preview Only</button>
           </div>
           <div className="flex items-center justify-end w-full sm:w-auto gap-2 text-xs font-medium mt-1 sm:mt-0">
-            {saveStatus === 'saving' && <span className="text-amber-500 flex items-center gap-1.5"><RefreshCw size={14} className="animate-spin" /> Saving...</span>}
+            <button 
+              onClick={() => {
+                if (content && chapter._id && chapter._id !== 'temp') {
+                  const summary = window.prompt("Enter a brief description for this version:", "Manual Save");
+                  if (summary) {
+                    bookApi.saveChapterVersion(chapter._id, content, summary)
+                      .then(() => toast.success('Version saved successfully'))
+                      .catch(() => toast.error('Failed to save version'));
+                  }
+                }
+              }}
+              disabled={!content || chapter._id === 'temp'}
+              className="mr-2 px-2 py-1 text-slate-500 hover:text-primary-600 hover:bg-primary-50 dark:hover:bg-primary-900/30 rounded flex items-center gap-1 transition-colors disabled:opacity-50"
+              title="Save to Version History"
+            >
+              <Save size={14} /> Save Version
+            </button>
+            {saveStatus === 'saving' && <span className="text-amber-500 flex items-center gap-1.5"><RefreshCw size={14} className="animate-spin" /> Autosaving...</span>}
             {saveStatus === 'saved' && <span className="text-green-500 flex items-center gap-1.5"><CheckCircle2 size={14} /> Saved</span>}
-            {saveStatus === 'waiting' && <span className="text-slate-400 dark:text-slate-500 flex items-center gap-1.5"><Save size={14} /> Unsaved changes...</span>}
+            {saveStatus === 'waiting' && <span className="text-slate-400 dark:text-slate-500 flex items-center gap-1.5"><Save size={14} /> Unsaved...</span>}
           </div>
         </div>
 
         <MDEditor
           value={content}
           onChange={(val) => setContent(val || '')}
-          preview={editorView}
+          preview={editorView === 'preview' ? 'live' : editorView}
           height={400}
-          className="flex-1 w-full border border-slate-200 dark:border-slate-700 rounded-xl shadow-sm overflow-hidden"
-          previewOptions={{
-            className: "prose max-w-none prose-primary p-4 dark:prose-invert"
-          }}
+          className={`flex-1 w-full border border-slate-200 dark:border-slate-700 rounded-xl shadow-sm overflow-hidden ${editorView === 'preview' ? 'force-preview-mode' : ''}`}
           textareaProps={{
             ref: textareaRef,
             onSelect: handleTextSelection,
