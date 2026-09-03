@@ -301,26 +301,27 @@ Chapters content:
 ${chapters.map(c => `Chapter ${c.order} - ${c.title}:
 ${c.content.substring(0, 1000)}...`).join('\n\n')}
 
-Analyze if the tone and style remain consistent across these excerpts. Provide a score out of 10, an overall assessment, and specific flags for any inconsistencies found.`;
+Analyze if the tone and style remain consistent across these excerpts. Provide a score out of 10, an overall assessment, and specific flags for any inconsistencies found. Return these flags as inconsistentChapters including the chapter title, the specific issue, and a suggestion for improvement.`;
 
   const schema = {
     type: "object",
     properties: {
       consistencyScore: { type: "integer", description: "Score from 1 to 10" },
       overallAssessment: { type: "string" },
-      flags: {
+      inconsistentChapters: {
         type: "array",
         items: {
           type: "object",
           properties: {
-            chapterOrder: { type: "integer" },
-            issue: { type: "string" }
+            chapterTitle: { type: "string" },
+            issue: { type: "string" },
+            suggestion: { type: "string" }
           },
-          required: ["chapterOrder", "issue"]
+          required: ["chapterTitle", "issue", "suggestion"]
         }
       }
     },
-    required: ["consistencyScore", "overallAssessment", "flags"]
+    required: ["consistencyScore", "overallAssessment", "inconsistentChapters"]
   };
 
   return await executeWithRetry(prompt, schema);
