@@ -41,12 +41,14 @@
 }
 
 /* Fix for MDEditor preview mode blank issue */
-.force-preview-mode .w-md-editor-input,
 .force-preview-mode .w-md-editor-text {
   display: none !important;
-  width: 0 !important;
+}
+.force-preview-mode .w-md-editor-bar {
+  display: none !important;
 }
 .force-preview-mode .w-md-editor-preview {
   width: 100% !important;
   display: block !important;
+  box-shadow: none !important;
 }

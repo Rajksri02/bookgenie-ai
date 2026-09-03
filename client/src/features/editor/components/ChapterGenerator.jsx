@@ -219,8 +219,12 @@ const ChapterGenerator = ({ chapter, bookContext, previousChapter, nextChapter, 
         </div>
 
         <MDEditor
-          value={content}
-          onChange={(val) => setContent(val || '')}
+          value={!content && editorView === 'preview' ? '_No content to preview yet. Generate a chapter or switch to Edit mode to start writing._' : content}
+          onChange={(val) => {
+            if (val !== '_No content to preview yet. Generate a chapter or switch to Edit mode to start writing._') {
+              setContent(val || '');
+            }
+          }}
           preview={editorView === 'preview' ? 'live' : editorView}
           height={400}
           className={`flex-1 w-full border border-slate-200 dark:border-slate-700 rounded-xl shadow-sm overflow-hidden ${editorView === 'preview' ? 'force-preview-mode' : ''}`}
