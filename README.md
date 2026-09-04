@@ -19,7 +19,7 @@ graph TD
     API -->|Uploads| Cloudinary[Cloudinary]
 ```
 
-## 🧠 Technical Decisions (Interview Notes)
+## 🧠 Technical Decisions
 
 This project was built to demonstrate proficiency in solving complex, real-world engineering challenges. Key architectural and implementation decisions include:
 
