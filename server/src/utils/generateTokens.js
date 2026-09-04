@@ -3,9 +3,10 @@ const jwt = require('jsonwebtoken');
 /**
  * Generates an access token and a refresh token for a given user ID.
  * @param {string} userId - The user's database ID.
+ * @param {boolean} rememberMe - Whether to remember the user for long periods.
  * @returns {Object} { accessToken, refreshToken }
  */
-const generateTokens = (userId) => {
+const generateTokens = (userId, rememberMe = true) => {
   if (!process.env.JWT_SECRET) {
     throw new Error('JWT_SECRET is not defined in environment variables');
   }
@@ -17,12 +18,11 @@ const generateTokens = (userId) => {
     { expiresIn: '15m' }
   );
 
-  // Refresh Token: Long-lived (7 days)
-  // In a production app, consider using a separate JWT_REFRESH_SECRET
+  // Refresh Token
   const refreshToken = jwt.sign(
-    { id: userId },
+    { id: userId, rememberMe },
     process.env.JWT_SECRET,
-    { expiresIn: '7d' }
+    { expiresIn: rememberMe ? '30d' : '1d' }
   );
 
   return { accessToken, refreshToken };
