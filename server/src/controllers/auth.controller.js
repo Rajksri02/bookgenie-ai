@@ -6,13 +6,18 @@ const crypto = require('crypto');
 const sendEmail = require('../utils/sendEmail');
 
 // Helper to set cookies
-const setTokenCookie = (res, refreshToken) => {
-  res.cookie('refreshToken', refreshToken, {
+const setTokenCookie = (res, refreshToken, rememberMe = true) => {
+  const options = {
     httpOnly: true,
     secure: process.env.NODE_ENV === 'production',
     sameSite: 'strict', // Prevents CSRF
-    maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
-  });
+  };
+  
+  if (rememberMe) {
+    options.maxAge = 30 * 24 * 60 * 60 * 1000; // 30 days
+  }
+
+  res.cookie('refreshToken', refreshToken, options);
 };
 
 /**
@@ -38,8 +43,8 @@ const register = catchAsync(async (req, res) => {
     password,
   });
 
-  const { accessToken, refreshToken } = generateTokens(user._id);
-  setTokenCookie(res, refreshToken);
+  const { accessToken, refreshToken } = generateTokens(user._id, true);
+  setTokenCookie(res, refreshToken, true);
 
   res.status(201).json({
     success: true,
@@ -57,7 +62,7 @@ const register = catchAsync(async (req, res) => {
  * @access  Public
  */
 const login = catchAsync(async (req, res) => {
-  const { email, password } = req.body;
+  const { email, password, rememberMe = false } = req.body;
 
   // Explicitly selecting password because we set it to 'select: false' in the model
   const user = await User.findOne({ email }).select('+password');
@@ -78,8 +83,8 @@ const login = catchAsync(async (req, res) => {
     });
   }
 
-  const { accessToken, refreshToken } = generateTokens(user._id);
-  setTokenCookie(res, refreshToken);
+  const { accessToken, refreshToken } = generateTokens(user._id, rememberMe);
+  setTokenCookie(res, refreshToken, rememberMe);
 
   res.status(200).json({
     success: true,
@@ -115,10 +120,11 @@ const refresh = catchAsync(async (req, res) => {
     }
 
     // Issue a new access token
-    const { accessToken, refreshToken: newRefreshToken } = generateTokens(user._id);
+    const rememberMe = decoded.rememberMe !== undefined ? decoded.rememberMe : true;
+    const { accessToken, refreshToken: newRefreshToken } = generateTokens(user._id, rememberMe);
     
     // Optionally rotate the refresh token
-    setTokenCookie(res, newRefreshToken);
+    setTokenCookie(res, newRefreshToken, rememberMe);
 
     res.status(200).json({
       success: true,
@@ -239,8 +245,8 @@ const resetPassword = catchAsync(async (req, res) => {
   await user.save();
 
   // Send back new access token
-  const { accessToken, refreshToken } = generateTokens(user._id);
-  setTokenCookie(res, refreshToken);
+  const { accessToken, refreshToken } = generateTokens(user._id, true);
+  setTokenCookie(res, refreshToken, true);
 
   res.status(200).json({
     success: true,
