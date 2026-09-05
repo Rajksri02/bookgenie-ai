@@ -4,6 +4,8 @@ import { bookApi } from '../api/bookApi';
 import { ImagePlus, Sparkles, Loader2 } from 'lucide-react';
 import toast from 'react-hot-toast';
 
+import heic2any from 'heic2any';
+
 const BookMetadataForm = ({ metadata, setMetadata, initialBookContext = {} }) => {
   const [isUploading, setIsUploading] = useState(false);
   const [isGenerating, setIsGenerating] = useState(false);
@@ -14,12 +16,28 @@ const BookMetadataForm = ({ metadata, setMetadata, initialBookContext = {} }) =>
   };
 
   const handleImageUpload = async (e) => {
-    const file = e.target.files[0];
+    let file = e.target.files[0];
     if (!file) return;
 
     try {
       setIsUploading(true);
       
+      // Convert HEIC/HEIF to JPEG first
+      if (
+        file.type === 'image/heic' || 
+        file.type === 'image/heif' || 
+        file.name.toLowerCase().endsWith('.heic') || 
+        file.name.toLowerCase().endsWith('.heif')
+      ) {
+        const convertedBlob = await heic2any({
+          blob: file,
+          toType: 'image/jpeg',
+          quality: 0.8
+        });
+        const blob = Array.isArray(convertedBlob) ? convertedBlob[0] : convertedBlob;
+        file = new File([blob], file.name.replace(/\.hei[cf]$/i, '.jpg'), { type: 'image/jpeg' });
+      }
+
       const options = {
         maxSizeMB: 1,
         maxWidthOrHeight: 1200,
@@ -34,7 +52,7 @@ const BookMetadataForm = ({ metadata, setMetadata, initialBookContext = {} }) =>
       }
     } catch (error) {
       console.error('Error uploading image:', error);
-      toast.error('Failed to upload image. Make sure Cloudinary is configured in the backend.');
+      toast.error(error?.message || 'Failed to upload image. Please try another format.');
     } finally {
       setIsUploading(false);
     }

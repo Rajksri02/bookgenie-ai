@@ -19,7 +19,7 @@ const uploadImage = catchAsync(async (req, res, next) => {
     // Upload image to Cloudinary from the temp local file multer created
     const result = await cloudinary.uploader.upload(req.file.path, {
       folder: 'bookgenie',
-      allowed_formats: ['jpg', 'png', 'jpeg', 'webp'],
+      allowed_formats: ['jpg', 'png', 'jpeg', 'webp', 'heic', 'heif'],
     });
 
     // Delete the temporary file from local storage
