@@ -17,6 +17,16 @@
 
 BookGenie AI is a full-stack web application designed to help authors collaboratively outline, write, and export books using the power of Google's Gemini AI. It features real-time streaming text generation, style consistency analysis, and a seamless markdown editing experience.
 
+## ✨ Features
+- 🔐 Secure JWT auth with refresh-token rotation
+- 🧠 AI-generated book outlines with editable, drag-and-drop chapter structure
+- ✍️ Streaming AI chapter writer with context-aware continuity between chapters
+- 📝 Live Markdown editor with real-time preview
+- 🖼️ AI-generated or uploaded cover images (Cloudinary)
+- 📄 Export to PDF (Puppeteer) or DOCX (native Word formatting)
+- 📊 Style consistency analysis across chapters
+- 📱 Fully responsive, dark-mode-ready UI
+
 ## 🏗 Architecture
 
 The application follows a modern decoupled architecture:
@@ -42,9 +52,19 @@ This project was built to demonstrate proficiency in solving complex, real-world
 - **Problem:** LLMs naturally output unstructured conversational text, but the frontend requires strict data structures to render dynamic UIs (like the Consistency Report Modal or the Outline drag-and-drop builder).
 - **Solution:** Enforced structured outputs using explicit JSON schemas in system prompts and utilizing Gemini's structured output capabilities. This guarantees that the AI returns exact keys like `chapterTitle`, `issue`, and `suggestion`, ensuring robust frontend rendering without regex hacking.
 
+Example enforced schema for outline generation:
+```json
+{ "title": string, "chapters": [{ "order": number, "title": string, "summary": string }] }
+```
+
 ### 3. File Processing: Puppeteer for PDF Export
 - **Problem:** Converting complex markdown (with varying styles, fonts, and layouts) into a polished, print-ready PDF is difficult with standard lightweight markdown-to-pdf libraries.
 - **Solution:** Integrated `puppeteer` to spin up a headless browser environment on the server. The server renders the markdown into a heavily styled HTML template, which Puppeteer then "prints" to a highly precise PDF document, supporting exact page breaks, margins, and embedded styles.
+
+## ⚠️ Known Limitations
+- Background export jobs are tracked in-memory; a server restart mid-export will lose the job (would move to a persistent queue like BullMQ + Redis for production).
+- No automated test suite yet.
+- AI generation costs scale with usage — no per-user quota enforced yet.
 
 ## 🚀 Setup & Installation
 
