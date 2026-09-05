@@ -3,6 +3,7 @@ const dotenv = require('dotenv');
 dotenv.config();
 
 const express = require('express');
+const helmet = require('helmet');
 const cors = require('cors');
 const cookieParser = require('cookie-parser');
 const connectDB = require('./src/config/db');
@@ -19,6 +20,9 @@ connectDB();
 
 const app = express();
 const PORT = process.env.PORT || 5000;
+
+// Security headers
+app.use(helmet());
 
 // Body parser
 app.use(express.json());
