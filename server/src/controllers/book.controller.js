@@ -53,18 +53,21 @@ const updateBook = catchAsync(async (req, res) => {
   const { metadata, chapters } = req.body;
 
   // 1. Update the book document
+  const updateData = {};
+  if (metadata) {
+    if (metadata.title !== undefined) updateData.title = metadata.title;
+    if (metadata.subtitle !== undefined) updateData.subtitle = metadata.subtitle;
+    if (metadata.author !== undefined) updateData.author = metadata.author;
+    if (metadata.description !== undefined) updateData.description = metadata.description;
+    if (metadata.coverImage !== undefined) updateData.coverImage = metadata.coverImage;
+    if (metadata.genre !== undefined) updateData.genre = metadata.genre;
+    if (metadata.tone !== undefined) updateData.tone = metadata.tone;
+    if (metadata.topic !== undefined) updateData.topic = metadata.topic;
+  }
+
   const book = await Book.findOneAndUpdate(
     { _id: bookId, user: req.user._id },
-    {
-      title: metadata.title,
-      subtitle: metadata.subtitle,
-      author: metadata.author,
-      description: metadata.description,
-      coverImage: metadata.coverImage,
-      genre: metadata.genre,
-      tone: metadata.tone,
-      topic: metadata.topic
-    },
+    { $set: updateData },
     { new: true }
   );
 
