@@ -21,6 +21,9 @@ connectDB();
 const app = express();
 const PORT = process.env.PORT || 5000;
 
+// Trust the reverse proxy (Render) to allow rate limiting to see real IPs
+app.set('trust proxy', 1);
+
 // Security headers
 app.use(helmet());
 
