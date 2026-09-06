@@ -5,17 +5,20 @@ import { ImagePlus, Sparkles, Loader2 } from 'lucide-react';
 import toast from 'react-hot-toast';
 
 import { heicTo } from 'heic-to';
+import ImageCropModal from './ImageCropModal';
 
 const BookMetadataForm = ({ metadata, setMetadata, initialBookContext = {} }) => {
   const [isUploading, setIsUploading] = useState(false);
   const [isGenerating, setIsGenerating] = useState(false);
+  const [cropModalOpen, setCropModalOpen] = useState(false);
+  const [selectedImageForCrop, setSelectedImageForCrop] = useState(null);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
     setMetadata(prev => ({ ...prev, [name]: value }));
   };
 
-  const handleImageUpload = async (e) => {
+  const handleImageSelect = async (e) => {
     let file = e.target.files[0];
     if (!file) return;
 
@@ -38,24 +41,62 @@ const BookMetadataForm = ({ metadata, setMetadata, initialBookContext = {} }) =>
         file = new File([convertedBlob], file.name.replace(/\.hei[cf]$/i, '.jpg'), { type: 'image/jpeg' });
       }
 
+      // Create an object URL for the crop modal
+      const imageUrl = URL.createObjectURL(file);
+      setSelectedImageForCrop(imageUrl);
+      setCropModalOpen(true);
+      
+    } catch (error) {
+      console.error('Error preparing image:', error);
+      toast.error(error?.message || 'Failed to prepare image. Please try another format.');
+    } finally {
+      setIsUploading(false);
+    }
+    
+    // Reset file input so selecting the same file again works
+    e.target.value = '';
+  };
+
+  const handleCropComplete = async (processedBlob) => {
+    setCropModalOpen(false);
+    if (!processedBlob) return;
+
+    try {
+      setIsUploading(true);
       const options = {
         maxSizeMB: 5,
         maxWidthOrHeight: 2400,
         useWebWorker: true,
-        initialQuality: 0.95 // Keep quality high
+        initialQuality: 0.95
       };
       
+      // Convert Blob to File for browser-image-compression
+      const file = new File([processedBlob], 'cover.jpg', { type: 'image/jpeg' });
       const compressedFile = await imageCompression(file, options);
       
       const response = await bookApi.uploadCoverImage(compressedFile);
       if (response.success) {
         setMetadata(prev => ({ ...prev, coverImage: response.url }));
+        toast.success("Cover image updated successfully!");
       }
     } catch (error) {
-      console.error('Error uploading image:', error);
-      toast.error(error?.message || 'Failed to upload image. Please try another format.');
+      console.error('Error uploading cropped image:', error);
+      toast.error(error?.message || 'Failed to upload image.');
     } finally {
       setIsUploading(false);
+      // Clean up object URL
+      if (selectedImageForCrop) {
+        URL.revokeObjectURL(selectedImageForCrop);
+        setSelectedImageForCrop(null);
+      }
+    }
+  };
+
+  const handleCropCancel = () => {
+    setCropModalOpen(false);
+    if (selectedImageForCrop) {
+      URL.revokeObjectURL(selectedImageForCrop);
+      setSelectedImageForCrop(null);
     }
   };
 
@@ -87,7 +128,8 @@ const BookMetadataForm = ({ metadata, setMetadata, initialBookContext = {} }) =>
   };
 
   return (
-    <div className="bg-white dark:bg-slate-900 rounded-xl shadow-sm border border-slate-100 dark:border-slate-800 p-6 mb-8 flex flex-col md:flex-row gap-8">
+    <>
+      <div className="bg-white dark:bg-slate-900 rounded-xl shadow-sm border border-slate-100 dark:border-slate-800 p-6 mb-8 flex flex-col md:flex-row gap-8">
       
       {/* Form Fields */}
       <div className="flex-1 space-y-4">
@@ -178,7 +220,7 @@ const BookMetadataForm = ({ metadata, setMetadata, initialBookContext = {} }) =>
               type="file" 
               accept="image/*" 
               className="hidden" 
-              onChange={handleImageUpload}
+              onChange={handleImageSelect}
               disabled={isUploading || isGenerating}
             />
           </label>
@@ -205,6 +247,15 @@ const BookMetadataForm = ({ metadata, setMetadata, initialBookContext = {} }) =>
       </div>
       
     </div>
+      
+      {/* Crop Modal */}
+      <ImageCropModal 
+        isOpen={cropModalOpen}
+        imageSrc={selectedImageForCrop}
+        onClose={handleCropCancel}
+        onComplete={handleCropComplete}
+      />
+    </>
   );
 };
 
