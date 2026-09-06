@@ -4,7 +4,7 @@ import { bookApi } from '../api/bookApi';
 import { ImagePlus, Sparkles, Loader2 } from 'lucide-react';
 import toast from 'react-hot-toast';
 
-import heic2any from 'heic2any';
+import { heicTo } from 'heic-to';
 
 const BookMetadataForm = ({ metadata, setMetadata, initialBookContext = {} }) => {
   const [isUploading, setIsUploading] = useState(false);
@@ -29,19 +29,20 @@ const BookMetadataForm = ({ metadata, setMetadata, initialBookContext = {} }) =>
         file.name.toLowerCase().endsWith('.heic') || 
         file.name.toLowerCase().endsWith('.heif')
       ) {
-        const convertedBlob = await heic2any({
+        const convertedBlob = await heicTo({
           blob: file,
-          toType: 'image/jpeg',
+          type: 'image/jpeg',
           quality: 0.8
         });
-        const blob = Array.isArray(convertedBlob) ? convertedBlob[0] : convertedBlob;
-        file = new File([blob], file.name.replace(/\.hei[cf]$/i, '.jpg'), { type: 'image/jpeg' });
+        
+        file = new File([convertedBlob], file.name.replace(/\.hei[cf]$/i, '.jpg'), { type: 'image/jpeg' });
       }
 
       const options = {
-        maxSizeMB: 1,
-        maxWidthOrHeight: 1200,
+        maxSizeMB: 5,
+        maxWidthOrHeight: 2400,
         useWebWorker: true,
+        initialQuality: 0.95 // Keep quality high
       };
       
       const compressedFile = await imageCompression(file, options);
