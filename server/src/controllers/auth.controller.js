@@ -3,7 +3,7 @@ const catchAsync = require('../utils/catchAsync');
 const generateTokens = require('../utils/generateTokens');
 const jwt = require('jsonwebtoken');
 const crypto = require('crypto');
-const sendEmail = require('../utils/sendEmail');
+const sendEmail = require('../services/emailService');
 
 // Helper to set cookies
 const setTokenCookie = (res, refreshToken, rememberMe = true) => {
@@ -191,12 +191,14 @@ const forgotPassword = catchAsync(async (req, res) => {
   const resetUrl = `${clientUrl}/reset-password/${resetToken}`;
 
   const message = `You are receiving this email because you (or someone else) has requested the reset of a password. Please make a PUT request to: \n\n ${resetUrl}`;
+  const htmlMessage = `<p>You are receiving this email because you (or someone else) has requested the reset of a password.</p><p>Click the link below to reset your password:</p><p><a href="${resetUrl}">${resetUrl}</a></p>`;
 
   try {
     await sendEmail({
       email: user.email,
       subject: 'Password reset token',
       message,
+      html: htmlMessage
     });
 
     res.status(200).json({
