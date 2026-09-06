@@ -109,7 +109,13 @@ const OutlineEditor = ({ initialOutline, onStartOver, bookContext }) => {
               clearInterval(intervalId);
               setIsExporting(false);
               setExportJobId(null);
-              const backendUrl = import.meta.env.VITE_API_URL ? import.meta.env.VITE_API_URL.replace('/api', '') : 'http://localhost:5050';
+              let backendUrl = import.meta.env.VITE_API_URL || 'http://localhost:5050';
+              if (backendUrl.endsWith('/api')) {
+                backendUrl = backendUrl.slice(0, -4);
+              }
+              if (backendUrl.endsWith('/')) {
+                backendUrl = backendUrl.slice(0, -1);
+              }
               const fullUrl = `${backendUrl}${fileUrl}`;
               
               const a = document.createElement('a');

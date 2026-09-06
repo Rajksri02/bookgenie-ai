@@ -359,8 +359,14 @@ export const DashboardList = () => {
           
           if (job.status === 'completed') {
             toast.success('Export complete! Downloading...', { id: toastId });
-            const baseUrl = import.meta.env.VITE_API_URL || 'http://localhost:5050/api';
-            const serverUrl = baseUrl.replace('/api', '');
+            
+            let serverUrl = import.meta.env.VITE_API_URL || 'http://localhost:5050/api';
+            if (serverUrl.endsWith('/api')) {
+              serverUrl = serverUrl.slice(0, -4);
+            }
+            if (serverUrl.endsWith('/')) {
+              serverUrl = serverUrl.slice(0, -1);
+            }
             
             const link = document.createElement('a');
             link.href = `${serverUrl}${job.fileUrl}`;

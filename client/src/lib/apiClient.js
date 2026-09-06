@@ -11,9 +11,18 @@ export const getMemoryToken = () => {
   return memoryToken;
 };
 
+// Ensure baseURL always ends with /api to prevent 404s if env var is misconfigured
+let configuredBaseURL = import.meta.env.VITE_API_URL || 'http://localhost:5050/api';
+if (configuredBaseURL && !configuredBaseURL.endsWith('/api')) {
+  if (configuredBaseURL.endsWith('/')) {
+    configuredBaseURL = configuredBaseURL.slice(0, -1);
+  }
+  configuredBaseURL += '/api';
+}
+
 // Create a centralized axios instance
 const apiClient = axios.create({
-  baseURL: import.meta.env.VITE_API_URL || 'http://localhost:5050/api',
+  baseURL: configuredBaseURL,
   headers: {
     'Content-Type': 'application/json',
   },
