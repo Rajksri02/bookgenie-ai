@@ -75,24 +75,51 @@ const updateBook = catchAsync(async (req, res) => {
     return res.status(404).json({ success: false, error: 'Book not found' });
   }
 
-  // 2. Update chapters
-  // For simplicity, we assume chapters are just updated. We update by _id.
-  if (chapters && chapters.length > 0) {
-    const bulkOps = chapters.map((ch, index) => ({
-      updateOne: {
-        filter: { _id: ch._id, book: book._id },
-        update: {
-          $set: {
-            title: ch.title,
-            summary: ch.summary,
-            content: ch.content || '',
-            estimatedWords: ch.estimatedWords,
-            order: ch.order !== undefined ? ch.order : index
-          }
+  // 2. Sync chapters (Update existing, Delete removed, Insert new)
+  if (chapters) {
+    const chapterIdsToKeep = chapters.filter(c => c._id).map(c => c._id);
+    
+    // Delete chapters that were removed in the UI
+    await Chapter.deleteMany({
+      book: book._id,
+      _id: { $nin: chapterIdsToKeep }
+    });
+
+    if (chapters.length > 0) {
+      const bulkOps = chapters.map((ch, index) => {
+        if (ch._id) {
+          return {
+            updateOne: {
+              filter: { _id: ch._id, book: book._id },
+              update: {
+                $set: {
+                  title: ch.title,
+                  summary: ch.summary,
+                  content: ch.content || '',
+                  estimatedWords: ch.estimatedWords,
+                  order: ch.order !== undefined ? ch.order : index
+                }
+              }
+            }
+          };
+        } else {
+          return {
+            insertOne: {
+              document: {
+                book: book._id,
+                title: ch.title,
+                summary: ch.summary,
+                content: ch.content || '',
+                estimatedWords: ch.estimatedWords,
+                order: ch.order !== undefined ? ch.order : index,
+                status: ch.status || 'draft'
+              }
+            }
+          };
         }
-      }
-    }));
-    await Chapter.bulkWrite(bulkOps);
+      });
+      await Chapter.bulkWrite(bulkOps);
+    }
   }
 
   res.status(200).json({
