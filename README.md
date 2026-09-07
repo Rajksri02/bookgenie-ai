@@ -1,31 +1,35 @@
 # BookGenie AI 🧞‍♂️📖
 
-> **Live Demo:** [Insert Link Here] 
+> **Live Demo:** [https://bookgenie-ai.vercel.app](https://bookgenie-ai.vercel.app)
 
 ![BookGenie AI Demo](placeholder-for-demo.gif)
 *(Replace this placeholder with a 15-30 second GIF/screen-recording showing the AI outline generation and streaming chapter writing!)*
 
 <div align="center">
   <img src="https://img.shields.io/badge/React-20232A?style=for-the-badge&logo=react&logoColor=61DAFB" alt="React" />
-  <img src="https://img.shields.io/badge/Tailwind_CSS-38B2AC?style=for-the-badge&logo=tailwind-css&logoColor=white" alt="Tailwind CSS" />
   <img src="https://img.shields.io/badge/Vite-B73BFE?style=for-the-badge&logo=vite&logoColor=FFD62E" alt="Vite" />
+  <img src="https://img.shields.io/badge/Tailwind_CSS-38B2AC?style=for-the-badge&logo=tailwind-css&logoColor=white" alt="Tailwind CSS" />
   <img src="https://img.shields.io/badge/Node.js-339933?style=for-the-badge&logo=nodedotjs&logoColor=white" alt="Node.js" />
   <img src="https://img.shields.io/badge/Express.js-000000?style=for-the-badge&logo=express&logoColor=white" alt="Express.js" />
-  <img src="https://img.shields.io/badge/MongoDB-4EA94B?style=for-the-badge&logo=mongodb&logoColor=white" alt="MongoDB" />
+  <img src="https://img.shields.io/badge/MongoDB_Atlas-4EA94B?style=for-the-badge&logo=mongodb&logoColor=white" alt="MongoDB Atlas" />
   <img src="https://img.shields.io/badge/Google_Gemini-8E75B2?style=for-the-badge&logo=googlegemini&logoColor=white" alt="Google Gemini" />
+  <img src="https://img.shields.io/badge/Vercel-000000?style=for-the-badge&logo=vercel&logoColor=white" alt="Vercel" />
+  <img src="https://img.shields.io/badge/Render-46E3B7?style=for-the-badge&logo=render&logoColor=white" alt="Render" />
 </div>
 
 BookGenie AI is a full-stack web application designed to help authors collaboratively outline, write, and export books using the power of Google's Gemini AI. It features real-time streaming text generation, style consistency analysis, and a seamless markdown editing experience.
 
 ## ✨ Features
-- 🔐 Secure JWT auth with refresh-token rotation
+- 🔐 Secure JWT auth with refresh-token rotation and temporary password visibility toggles
+- 📧 Password reset functionality integrated with Resend API
 - 🧠 AI-generated book outlines with editable, drag-and-drop chapter structure
 - ✍️ Streaming AI chapter writer with context-aware continuity between chapters
 - 📝 Live Markdown editor with real-time preview
-- 🖼️ AI-generated or uploaded cover images (Cloudinary)
+- 🖼️ AI-generated or uploaded cover images stored on Cloudinary
 - 📄 Export to PDF (Puppeteer) or DOCX (native Word formatting)
 - 📊 Style consistency analysis across chapters
 - 📱 Fully responsive, dark-mode-ready UI
+- 🚀 Production-ready deployment (Vercel Frontend + Render Backend)
 
 ## 🏗 Architecture
 
@@ -33,10 +37,11 @@ The application follows a modern decoupled architecture:
 
 ```mermaid
 graph TD
-    Client[Client: React, Vite, Tailwind] -->|REST / JSON| API[Server: Express.js API]
+    Client[Frontend: React/Vite on Vercel] -->|REST API| API[Backend: Express.js on Render]
     API -->|Google GenAI SDK| Gemini[Google Gemini AI]
     API -->|Mongoose| MongoDB[(MongoDB Atlas)]
-    API -->|Uploads| Cloudinary[Cloudinary]
+    API -->|Uploads| Cloudinary[Cloudinary CDN]
+    API -->|Emails| Resend[Resend Email API]
 ```
 
 ## 🧠 Technical Decisions
