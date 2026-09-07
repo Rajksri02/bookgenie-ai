@@ -2,10 +2,9 @@
 
 > **Live Demo:** [https://bookgenie-ai.vercel.app](https://bookgenie-ai.vercel.app)
 
-- ![BookGenie AI Demo](placeholder-for-demo.gif)
-- _(Replace this placeholder with a 15-30 second GIF/screen-recording showing the AI outline generation and streaming chapter writing!)_
-
-* ![BookGenie AI Demo](./assets/demo.gif)
+<video src="./assets/demo.mov" controls="controls" width="100%">
+  Your browser does not support the video tag.
+</video>
 
 <div align="center">
   <img src="https://img.shields.io/badge/React-20232A?style=for-the-badge&logo=react&logoColor=61DAFB" alt="React" />
