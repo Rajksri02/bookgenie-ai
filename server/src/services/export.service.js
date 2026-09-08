@@ -66,7 +66,7 @@ const generatePDF = async (book, chapters, jobId) => {
       args: ['--no-sandbox', '--disable-setuid-sandbox', '--disable-dev-shm-usage']
     });
     const page = await browser.newPage();
-    await page.setContent(htmlContent, { waitUntil: 'networkidle0' });
+    await page.setContent(htmlContent, { waitUntil: 'domcontentloaded' });
 
     const fileName = `export_${jobId}.pdf`;
     const filePath = path.join(UPLOADS_DIR, fileName);

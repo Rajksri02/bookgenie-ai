@@ -142,7 +142,7 @@ const OutlineEditor = ({ initialOutline, onStartOver, bookContext }) => {
         } catch (err) {
           console.error("Failed to check export status", err);
         }
-      }, 3000);
+      }, 1000);
     }
     return () => {
       if (intervalId) clearInterval(intervalId);

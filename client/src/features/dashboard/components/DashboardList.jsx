@@ -379,13 +379,13 @@ export const DashboardList = () => {
           } else if (job.status === 'failed') {
             toast.error('Export failed: ' + (job.error || 'Unknown error'), { id: toastId });
           } else {
-            setTimeout(checkStatus, 2000);
+            setTimeout(checkStatus, 1000);
           }
         } catch (err) {
           toast.error('Failed to check export status', { id: toastId });
         }
       };
-      setTimeout(checkStatus, 2000);
+      setTimeout(checkStatus, 1000);
     } catch (err) {
       toast.error('Failed to export book', { id: toastId });
     }
