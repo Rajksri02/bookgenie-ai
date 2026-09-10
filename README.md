@@ -27,8 +27,11 @@ BookGenie AI is a full-stack web application designed to help authors collaborat
 - 📝 Live Markdown editor with real-time preview
 - 🖼️ AI-generated or uploaded cover images stored on Cloudinary
 - 📄 Export to PDF (Puppeteer) or DOCX (native Word formatting)
+- ⚙️ Background job processing for exports (BullMQ + Redis)
 - 📊 Style consistency analysis across chapters
 - 📱 Fully responsive, dark-mode-ready UI
+- 🧪 Automated test suite (Jest + MongoDB Memory Server)
+- 🏗️ TypeScript infrastructure ready for gradual migration
 - 🚀 Production-ready deployment (Vercel Frontend + Render Backend)
 
 ## 🏗 Architecture
@@ -40,6 +43,9 @@ graph TD
     Client[Frontend: React/Vite on Vercel] -->|REST API| API[Backend: Express.js on Render]
     API -->|Google GenAI SDK| Gemini[Google Gemini AI]
     API -->|Mongoose| MongoDB[(MongoDB Atlas)]
+    API -->|BullMQ| Redis[(Redis Queue)]
+    Redis -->|Export Jobs| Worker[Background Worker]
+    Worker -->|PDF/DOCX| API
     API -->|Uploads| Cloudinary[Cloudinary CDN]
     API -->|Emails| Resend[Resend Email API]
 ```
@@ -72,8 +78,8 @@ Example enforced schema for outline generation:
 
 ## ⚠️ Known Limitations
 
-- Background export jobs are tracked in-memory; a server restart mid-export will lose the job (would move to a persistent queue like BullMQ + Redis for production).
-- No automated test suite yet.
+- TypeScript migration is infrastructure-only at the moment and has not yet been applied to the actual file extensions/components.
+- Local development requires a running Redis instance for the PDF/DOCX background export workers to process jobs.
 - AI generation costs scale with usage — no per-user quota enforced yet.
 
 ## 🚀 Setup & Installation
@@ -82,6 +88,9 @@ Example enforced schema for outline generation:
 
 - Node.js (v18+)
 - MongoDB (Local or Atlas URL)
+- Redis Server (Required for exports)
+  - **Mac (Homebrew):** `brew install redis && brew services start redis`
+  - **Docker:** `docker run -p 6379:6379 -d redis`
 - Gemini API Key
 - Cloudinary Account (for image uploads)
 
@@ -96,6 +105,9 @@ CLIENT_URL=http://localhost:5173
 
 # Database
 MONGO_URI=your_mongodb_connection_string
+
+# Redis
+REDIS_URL=redis://127.0.0.1:6379
 
 # Authentication
 JWT_SECRET=your_jwt_access_secret
@@ -132,4 +144,13 @@ npm run dev
 cd client
 npm install
 npm run dev
+```
+
+## 🧪 Running Tests
+
+The backend includes a comprehensive Jest integration test suite covering authentication, book/chapter CRUD, and mocked AI logic. It uses `mongodb-memory-server` to automatically spin up an isolated, in-memory MongoDB instance during tests, so you don't need a real database connection.
+
+```bash
+cd server
+npm run test
 ```
