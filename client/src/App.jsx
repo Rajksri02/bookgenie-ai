@@ -35,6 +35,8 @@ const HomePage = () => (
 
 const DashboardNew = () => {
   const navigate = useNavigate();
+  const [draftId] = useState(() => crypto.randomUUID());
+
   return (
     <PageWrapper className="p-8 bg-slate-50">
       <div className="max-w-6xl mx-auto">
@@ -45,7 +47,7 @@ const DashboardNew = () => {
           &larr; Back to Dashboard
         </Link>
         <OutlineGenerator onGenerate={(newBook) => {
-          const bookId = newBook._id || newBook.book?._id || 'new';
+          const bookId = newBook._id || newBook.book?._id || `new-${draftId}`;
           navigate(`/dashboard/edit/${bookId}`, { state: { bookContext: newBook } });
         }} />
       </div>
@@ -61,13 +63,26 @@ const DashboardEdit = () => {
 
   useEffect(() => {
     const handleLoad = async () => {
-      if (bookId === 'new') {
-        const draft = localStorage.getItem('bookgenie_draft_new');
+      if (bookId.startsWith('new-') || bookId === 'new') {
+        const draftKey = `bookgenie_draft_${bookId}`;
+        let draft = localStorage.getItem(draftKey);
+        
+        // Migration logic for legacy 'new' drafts
+        if (!draft && bookId.startsWith('new-')) {
+          const legacyDraft = localStorage.getItem('bookgenie_draft_new');
+          if (legacyDraft) {
+            draft = legacyDraft;
+            localStorage.setItem(draftKey, legacyDraft);
+            localStorage.removeItem('bookgenie_draft_new');
+          }
+        }
+
         if (draft) {
           const parsed = JSON.parse(draft);
           setBook({
             ...parsed.metadata,
-            chapters: parsed.chapters
+            chapters: parsed.chapters,
+            _id: bookId
           });
           setIsLoading(false);
         } else {
