@@ -4,6 +4,7 @@ const ChapterVersion = require('../models/ChapterVersion.model');
 const ExportJob = require('../models/ExportJob.model');
 const catchAsync = require('../utils/catchAsync');
 const exportService = require('../services/export.service');
+const { exportQueue } = require('../queues/export.queue');
 const createBook = catchAsync(async (req, res) => {
   const { metadata, chapters } = req.body;
 
@@ -270,13 +271,12 @@ const exportBook = catchAsync(async (req, res, next) => {
     format,
     status: 'pending'
   });
-
-  // Run in background without awaiting
-  if (format === 'pdf') {
-    exportService.generatePDF(book, chapters, exportJob._id);
-  } else if (format === 'docx') {
-    exportService.generateDOCX(book, chapters, exportJob._id);
-  }
+  // Run in background via BullMQ
+  await exportQueue.add('export-job', {
+    bookId,
+    format,
+    exportJobId: exportJob._id
+  });
 
   res.status(202).json({
     success: true,

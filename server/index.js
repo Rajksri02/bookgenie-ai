@@ -15,8 +15,13 @@ const imageRoutes = require('./src/routes/image.routes');
 const analysisRoutes = require('./src/routes/analysis.routes');
 const analyticsRoutes = require('./src/routes/analytics.routes');
 
-// Connect to database
-connectDB();
+// Connect to database unless in test environment
+if (process.env.NODE_ENV !== 'test') {
+  connectDB();
+}
+
+// Initialize background workers
+require('./src/queues/export.queue');
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -62,6 +67,10 @@ app.get('/', (req, res) => {
 // Centralized error handler should be the last middleware
 app.use(errorHandler);
 
-app.listen(PORT, () => {
-  console.log(`Server running in ${process.env.NODE_ENV || 'development'} mode on port ${PORT}`);
-});
+if (require.main === module) {
+  app.listen(PORT, () => {
+    console.log(`Server running in ${process.env.NODE_ENV || 'development'} mode on port ${PORT}`);
+  });
+}
+
+module.exports = app;
