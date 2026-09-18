@@ -45,3 +45,6 @@ server/inspect-*.js
 
 # Personal Interview Prep
 PROJECT_DEEP_DIVE.md
+
+# Puppeteer Cache
+.cache
