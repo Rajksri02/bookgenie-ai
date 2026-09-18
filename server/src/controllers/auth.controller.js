@@ -10,7 +10,7 @@ const setTokenCookie = (res, refreshToken, rememberMe = true) => {
   const options = {
     httpOnly: true,
     secure: process.env.NODE_ENV === 'production',
-    sameSite: 'strict', // Prevents CSRF
+    sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'strict',
   };
   
   if (rememberMe) {
@@ -159,7 +159,7 @@ const logout = catchAsync(async (req, res) => {
   res.clearCookie('refreshToken', {
     httpOnly: true,
     secure: process.env.NODE_ENV === 'production',
-    sameSite: 'strict',
+    sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'strict',
   });
   res.status(200).json({
     success: true,
