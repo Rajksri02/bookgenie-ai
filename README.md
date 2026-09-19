@@ -148,7 +148,7 @@ npm run dev
 
 ## 🧪 Running Tests
 
-The backend includes a comprehensive Jest integration test suite covering authentication, book/chapter CRUD, and mocked AI logic. It uses `mongodb-memory-server` to automatically spin up an isolated, in-memory MongoDB instance during tests, so you don't need a real database connection.
+The backend includes a comprehensive Jest integration test suite covering authentication, book/chapter CRUD, and mocked AI logic. It uses `mongodb-memory-server` and mocks out Redis/BullMQ to automatically spin up an isolated, in-memory environment during tests, so you don't need a real database or Redis connection.
 
 ```bash
 cd server
