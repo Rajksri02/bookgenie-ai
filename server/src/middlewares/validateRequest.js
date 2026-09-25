@@ -13,7 +13,8 @@ const validateRequest = (schema) => (req, res, next) => {
     });
     next();
   } catch (error) {
-    if (!error.errors) {
+    const issues = error.issues || error.errors;
+    if (!issues) {
       console.error('Validation Middleware caught non-Zod error:', error);
     }
     // Format Zod errors into a readable structure
@@ -21,7 +22,7 @@ const validateRequest = (schema) => (req, res, next) => {
       success: false,
       error: {
         message: 'Validation Error',
-        details: error.errors ? error.errors.map(err => ({
+        details: issues ? issues.map(err => ({
           field: err.path.join('.'),
           message: err.message
         })) : [{ message: error.message || 'Unknown validation error' }]
